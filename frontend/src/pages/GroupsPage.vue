@@ -6,13 +6,13 @@
       <q-btn color="primary" icon="group_add" :label="$t('groups.new')" unelevated @click="create" />
     </div>
     <q-inner-loading :showing="loading" />
-    <div v-if="!loading && !groups.length" class="text-center text-grey-6 q-pa-xl">
+    <div v-if="!loading && !groups.length" class="fs-card fs-empty">
       <q-icon name="groups" size="64px" />
       <div class="q-mt-md">{{ $t('groups.empty') }}</div>
     </div>
     <div v-else class="row q-col-gutter-md">
       <div v-for="g in groups" :key="g.id" class="col-12 col-sm-6 col-md-4">
-        <q-card flat bordered class="cursor-pointer" @click="$router.push({ name: 'group', params: { id: g.id } })">
+        <q-card flat class="fs-card is-clickable cursor-pointer" @click="$router.push({ name: 'group', params: { id: g.id } })">
           <q-card-section class="row items-center no-wrap">
             <q-avatar icon="groups" color="teal-1" text-color="teal-8" />
             <div class="q-ml-md ellipsis">

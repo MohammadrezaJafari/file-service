@@ -7,7 +7,7 @@
         <div class="text-caption text-grey-6">{{ a.library?.name }}<span v-if="a.details?.from"> · {{ $t('activity.from', { path: a.details.from }) }}</span></div>
       </q-timeline-entry>
     </q-timeline>
-    <div v-if="!activities.length && !loading" class="text-center text-grey-6 q-pa-xl">{{ $t('activity.empty') }}</div>
+    <div v-if="!activities.length && !loading" class="fs-card fs-empty">{{ $t('activity.empty') }}</div>
     <div class="text-center q-mt-md">
       <q-btn v-if="nextPage" flat color="primary" :label="$t('common.loadMore')" :loading="loading" @click="load(nextPage)" />
     </div>

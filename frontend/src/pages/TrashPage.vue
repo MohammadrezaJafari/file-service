@@ -7,7 +7,7 @@
       <q-btn v-if="library?.is_owner && rows.length" flat color="negative" icon="delete_forever" :label="$t('trash.emptyTrash')" @click="emptyTrash" />
     </div>
 
-    <q-table flat bordered :rows="rows" :columns="columns" row-key="id" :loading="loading" :pagination="{ rowsPerPage: 0 }" hide-pagination :no-data-label="$t('trash.empty')">
+    <q-table flat class="fs-table" :rows="rows" :columns="columns" row-key="id" :loading="loading" :pagination="{ rowsPerPage: 0 }" hide-pagination :no-data-label="$t('trash.empty')">
       <template #body-cell-name="p">
         <q-td :props="p">
           <div class="row items-center no-wrap">

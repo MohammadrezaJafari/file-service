@@ -4,8 +4,8 @@ import { api } from '@/boot/axios'
  * Ask the API for a short-lived signed URL, so the browser can fetch the file
  * natively without needing the bearer header.
  */
-export async function signedUrl(node, { inline = false } = {}) {
-  const { data } = await api.get(`/nodes/${node.id}/download-url`, { params: { inline: inline ? 1 : 0 } })
+export async function signedUrl(node, { inline = false, thumb = false } = {}) {
+  const { data } = await api.get(`/nodes/${node.id}/download-url`, { params: { inline: inline ? 1 : 0, thumb: thumb ? 1 : 0 } })
   return data.url
 }
 

@@ -1,11 +1,14 @@
 <template>
   <q-dialog ref="dialogRef" @hide="onDialogHide">
-    <q-card style="min-width: 420px">
+    <q-card class="fs-card" style="min-width: 440px">
       <q-form @submit="submit">
         <q-card-section class="text-h6">{{ library ? $t('libraries.edit') : $t('libraries.new') }}</q-card-section>
         <q-card-section class="q-gutter-md">
           <q-input v-model="form.name" :label="$t('common.name')" outlined autofocus :rules="[(v) => !!v || $t('common.required')]" />
           <q-input v-model="form.description" :label="$t('libraries.description')" type="textarea" outlined autogrow />
+          <q-input v-if="!library" v-model="form.password" type="password" outlined :label="$t('encrypted.passwordLabel')" :hint="$t('encrypted.passwordHint')" :rules="[(v) => !v || v.length >= 6 || $t('auth.minChars')]">
+            <template #prepend><q-icon name="lock" /></template>
+          </q-input>
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat :label="$t('common.cancel')" @click="onDialogCancel" />
@@ -27,7 +30,7 @@ defineEmits([...useDialogPluginComponent.emits])
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent()
 const $q = useQuasar()
-const form = reactive({ name: props.library?.name || '', description: props.library?.description || '' })
+const form = reactive({ name: props.library?.name || '', description: props.library?.description || '', password: '' })
 const loading = ref(false)
 
 async function submit() {

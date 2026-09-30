@@ -18,6 +18,12 @@ class Library extends Model
 
     protected $hidden = ['password_hash', 'encrypted_key', 'key_salt'];
 
+    protected $attributes = [
+        'is_encrypted' => false,
+        'size_bytes' => 0,
+        'file_count' => 0,
+    ];
+
     protected function casts(): array
     {
         return [

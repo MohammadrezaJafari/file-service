@@ -163,7 +163,7 @@ class NodeService
                     'mime_type' => $mime,
                     'storage_path' => $stored['path'],
                     'hash' => $stored['hash'],
-                    'is_encrypted' => $library->is_encrypted,
+                    'is_encrypted' => (bool) $library->is_encrypted,
                     'version_number' => $node->version_number + 1,
                     'updated_by' => $user->id,
                 ])->save();
@@ -178,7 +178,7 @@ class NodeService
                     'mime_type' => $mime,
                     'storage_path' => $stored['path'],
                     'hash' => $stored['hash'],
-                    'is_encrypted' => $library->is_encrypted,
+                    'is_encrypted' => (bool) $library->is_encrypted,
                     'version_number' => 1,
                     'created_by' => $user->id,
                     'updated_by' => $user->id,
@@ -194,7 +194,7 @@ class NodeService
                 'size' => $stored['size'],
                 'mime_type' => $mime,
                 'hash' => $stored['hash'],
-                'is_encrypted' => $library->is_encrypted,
+                'is_encrypted' => (bool) $library->is_encrypted,
                 'created_by' => $user->id,
                 'created_at' => now(),
             ]);

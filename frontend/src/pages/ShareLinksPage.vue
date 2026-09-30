@@ -1,7 +1,7 @@
 <template>
   <q-page padding>
     <div class="page-title q-mb-md">{{ $t('links.title') }}</div>
-    <q-table flat bordered :rows="links" :columns="columns" row-key="id" :loading="loading" :pagination="{ rowsPerPage: 25 }" :no-data-label="$t('links.empty')">
+    <q-table flat class="fs-table" :rows="links" :columns="columns" row-key="id" :loading="loading" :pagination="{ rowsPerPage: 25 }" :no-data-label="$t('links.empty')">
       <template #body-cell-name="p">
         <q-td :props="p">
           <div class="row items-center no-wrap">

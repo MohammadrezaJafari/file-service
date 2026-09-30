@@ -1,6 +1,6 @@
 <template>
   <q-dialog ref="dialogRef" @hide="onDialogHide">
-    <q-card style="min-width: 520px; max-width: 95vw">
+    <q-card class="fs-card" style="min-width: 520px; max-width: 95vw">
       <q-card-section>
         <div class="text-h6">{{ $t('share.title', { target: node ? $t('share.folderTarget', { name: node.name }) : $t('share.libraryTarget', { name: library.name }) }) }}</div>
         <div class="text-caption text-grey-7">{{ $t('share.hint', { kind: node ? $t('common.folder') : $t('picker.library') }) }}</div>

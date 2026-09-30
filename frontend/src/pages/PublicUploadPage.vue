@@ -1,5 +1,5 @@
 <template>
-  <q-card flat bordered>
+  <q-card flat class="fs-card q-pa-sm">
     <q-inner-loading :showing="loading" />
     <template v-if="info">
       <q-card-section>

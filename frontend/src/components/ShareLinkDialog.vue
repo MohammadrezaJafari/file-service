@@ -1,6 +1,6 @@
 <template>
   <q-dialog ref="dialogRef" @hide="onDialogHide">
-    <q-card style="min-width: 480px; max-width: 95vw">
+    <q-card class="fs-card" style="min-width: 480px; max-width: 95vw">
       <q-card-section>
         <div class="text-h6">{{ kind === 'upload' ? $t('link.uploadTitle') : $t('link.title') }}</div>
         <div class="text-caption text-grey-7 ellipsis">{{ node ? node.name : library.name }}</div>

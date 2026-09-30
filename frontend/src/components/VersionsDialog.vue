@@ -1,6 +1,6 @@
 <template>
   <q-dialog ref="dialogRef" @hide="onDialogHide">
-    <q-card style="min-width: 560px; max-width: 95vw">
+    <q-card class="fs-card" style="min-width: 560px; max-width: 95vw">
       <q-card-section>
         <div class="text-h6">{{ $t('versions.title') }}</div>
         <div class="text-caption text-grey-7">{{ node.name }}</div>

@@ -17,6 +17,11 @@ file-service/
 | Files & folders | Upload (drag & drop, multi-file, progress), new folder, rename, move, copy, download (folders as ZIP), search, in-browser preview (images, video, audio, PDF, text) |
 | Versioning | Uploading a file with the same name creates a new version; browse history, download or restore any version |
 | Trash | Deleted items go to a per-library trash; restore or purge, "empty trash" |
+| Encryption | Encrypted libraries (Seafile style): per-library key sealed with an Argon2id-derived key from the user's password, files stored with XChaCha20-Poly1305; unlock per session, change password |
+| Metadata | Hierarchical tags, custom file properties (text, number, date, select, checkbox, user) per library, filter by tag |
+| Views | List, gallery (thumbnails), Kanban (group by any select property, drag & drop) and statistics views |
+| Editors | Built-in Markdown editor with live preview (wiki pages), Excalidraw whiteboards, version history for every save |
+| Wiki | Per-library wiki view that lists and renders all Markdown pages |
 | Storage | Content-addressable blob store (identical files stored once), per-user quotas, admin-defined upload limit |
 | Sharing | Share a library or a folder with users or groups, read-only or read/write |
 | Share links | Public download links (optional password, expiry, download on/off) and anonymous **upload links** |

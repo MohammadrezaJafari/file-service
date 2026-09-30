@@ -6,7 +6,7 @@
           <q-item-section avatar><q-icon name="share" /></q-item-section>
           <q-item-section>{{ $t('common.share') }}</q-item-section>
         </q-item>
-        <q-item clickable v-close-popup @click="link">
+        <q-item v-if="!library.is_encrypted" clickable v-close-popup @click="link">
           <q-item-section avatar><q-icon name="link" /></q-item-section>
           <q-item-section>{{ $t('common.getLink') }}</q-item-section>
         </q-item>

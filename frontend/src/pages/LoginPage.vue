@@ -1,5 +1,5 @@
 <template>
-  <q-card flat bordered>
+  <q-card flat class="fs-card q-pa-sm">
     <q-card-section>
       <div class="text-h6">{{ $t('auth.signIn') }}</div>
     </q-card-section>

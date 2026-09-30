@@ -9,6 +9,7 @@ const routes = [
       { path: 'lib/:id', name: 'library', component: () => import('@/pages/LibraryBrowserPage.vue') },
       { path: 'lib/:id/folder/:folderId', name: 'folder', component: () => import('@/pages/LibraryBrowserPage.vue') },
       { path: 'lib/:id/trash', name: 'trash', component: () => import('@/pages/TrashPage.vue') },
+      { path: 'lib/:id/wiki/:pageId?', name: 'wiki', component: () => import('@/pages/WikiPage.vue') },
       { path: 'shared', name: 'shared', component: () => import('@/pages/SharedPage.vue') },
       { path: 'starred', name: 'starred', component: () => import('@/pages/StarredPage.vue') },
       { path: 'links', name: 'links', component: () => import('@/pages/ShareLinksPage.vue') },

@@ -92,3 +92,12 @@ export function isPreviewable(node) {
     /\.(md|txt|json|csv|log)$/i.test(node.name)
   )
 }
+
+/** Which online editor opens a file: 'markdown', 'whiteboard' or null. */
+export function editorKind(node) {
+  if (!node || node.type !== 'file') return null
+  const name = (node.name || '').toLowerCase()
+  if (name.endsWith('.excalidraw') || node.mime_type === 'application/vnd.excalidraw+json') return 'whiteboard'
+  if (name.endsWith('.md') || name.endsWith('.markdown') || node.mime_type === 'text/markdown') return 'markdown'
+  return null
+}

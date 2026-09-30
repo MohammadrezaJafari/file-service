@@ -3,7 +3,7 @@
     <div class="page-title q-mb-md">{{ $t('profile.title') }}</div>
     <div class="row q-col-gutter-lg">
       <div class="col-12 col-md-6">
-        <q-card flat bordered>
+        <q-card flat class="fs-card">
           <q-card-section class="text-subtitle1">{{ $t('profile.profile') }}</q-card-section>
           <q-form @submit="saveProfile">
             <q-card-section class="q-gutter-md">
@@ -14,7 +14,7 @@
           </q-form>
         </q-card>
 
-        <q-card flat bordered class="q-mt-lg">
+        <q-card flat class="fs-card q-mt-lg">
           <q-card-section class="text-subtitle1">{{ $t('profile.changePassword') }}</q-card-section>
           <q-form @submit="savePassword">
             <q-card-section class="q-gutter-md">
@@ -27,7 +27,7 @@
         </q-card>
       </div>
       <div class="col-12 col-md-6">
-        <q-card flat bordered>
+        <q-card flat class="fs-card">
           <q-card-section class="text-subtitle1">{{ $t('profile.storage') }}</q-card-section>
           <q-card-section>
             <div class="text-h5">{{ formatBytes(auth.user?.used_bytes) }}</div>

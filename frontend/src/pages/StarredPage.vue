@@ -2,11 +2,11 @@
   <q-page padding>
     <div class="page-title q-mb-md">{{ $t('starred.title') }}</div>
     <q-inner-loading :showing="loading" />
-    <div v-if="!loading && !items.length" class="text-center text-grey-6 q-pa-xl">
+    <div v-if="!loading && !items.length" class="fs-card fs-empty">
       <q-icon name="star_border" size="64px" />
       <div class="q-mt-md">{{ $t('starred.empty') }}</div>
     </div>
-    <q-list v-else bordered separator class="rounded-borders">
+    <q-list v-else separator class="fs-card">
       <q-item v-for="n in items" :key="n.id" clickable @click="open(n)">
         <q-item-section avatar><q-icon :name="fileIcon(n)" :color="fileColor(n)" /></q-item-section>
         <q-item-section>

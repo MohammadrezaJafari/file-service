@@ -25,6 +25,12 @@ class Node extends Model
 
     protected $hidden = ['storage_path'];
 
+    protected $attributes = [
+        'is_encrypted' => false,
+        'size' => 0,
+        'version_number' => 0,
+    ];
+
     protected function casts(): array
     {
         return [

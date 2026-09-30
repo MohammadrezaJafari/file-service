@@ -1,12 +1,14 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated class="bg-primary text-white">
-      <q-toolbar>
-        <q-btn flat dense round icon="menu" aria-label="Menu" @click="drawerOpen = !drawerOpen" />
-        <q-toolbar-title class="cursor-pointer" @click="$router.push({ name: 'libraries' })">
-          <q-icon name="cloud" size="sm" class="q-mr-sm" />{{ auth.settings.site_name }}
-        </q-toolbar-title>
-
+    <q-header class="fs-header" height-hint="64">
+      <q-toolbar style="height: 64px">
+        <q-btn flat dense round icon="menu" :aria-label="$t('nav.files')" @click="drawerOpen = !drawerOpen" />
+        <div class="row items-center no-wrap cursor-pointer q-mx-sm" @click="$router.push({ name: 'libraries' })">
+          <span class="fs-brand-icon"><q-icon name="cloud" size="20px" /></span>
+          <span class="fs-brand q-mx-sm">{{ auth.settings.site_name }}</span>
+        </div>
+        <q-space />
+        <q-btn flat round dense :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="toggleDark" />
         <q-btn flat round dense icon="translate" :aria-label="$t('nav.language')">
           <q-menu>
             <q-list dense style="min-width: 140px">
@@ -16,10 +18,12 @@
             </q-list>
           </q-menu>
         </q-btn>
-        <q-btn flat round dense icon="account_circle">
+        <q-btn flat round dense class="q-ml-xs">
+          <q-avatar size="32px" color="primary" text-color="white">{{ initials }}</q-avatar>
           <q-menu>
-            <q-list style="min-width: 220px">
+            <q-list style="min-width: 230px">
               <q-item>
+                <q-item-section avatar><q-avatar color="primary" text-color="white">{{ initials }}</q-avatar></q-item-section>
                 <q-item-section>
                   <q-item-label>{{ auth.user?.name }}</q-item-label>
                   <q-item-label caption>{{ auth.user?.email }}</q-item-label>
@@ -44,30 +48,33 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="drawerOpen" show-if-above bordered :width="250">
-      <q-list padding>
-        <q-item-label header>{{ $t('nav.files') }}</q-item-label>
-        <q-item v-for="link in fileLinks" :key="link.name" clickable :to="{ name: link.name }" active-class="text-primary bg-blue-1">
-          <q-item-section avatar><q-icon :name="link.icon" /></q-item-section>
-          <q-item-section>{{ $t(link.label) }}</q-item-section>
-        </q-item>
+    <q-drawer v-model="drawerOpen" show-if-above :width="260" class="fs-drawer">
+      <q-scroll-area class="fit">
+        <q-list class="q-pt-sm">
+          <div class="fs-nav-header">{{ $t('nav.files') }}</div>
+          <q-item v-for="link in fileLinks" :key="link.name" clickable :to="{ name: link.name }" class="fs-nav-item">
+            <q-item-section avatar><q-icon :name="link.icon" /></q-item-section>
+            <q-item-section>{{ $t(link.label) }}</q-item-section>
+          </q-item>
 
-        <q-separator spaced />
-        <q-item-label header>{{ $t('nav.collaboration') }}</q-item-label>
-        <q-item v-for="link in collabLinks" :key="link.name" clickable :to="{ name: link.name }" active-class="text-primary bg-blue-1">
-          <q-item-section avatar><q-icon :name="link.icon" /></q-item-section>
-          <q-item-section>{{ $t(link.label) }}</q-item-section>
-        </q-item>
-      </q-list>
+          <div class="fs-nav-header">{{ $t('nav.collaboration') }}</div>
+          <q-item v-for="link in collabLinks" :key="link.name" clickable :to="{ name: link.name }" class="fs-nav-item">
+            <q-item-section avatar><q-icon :name="link.icon" /></q-item-section>
+            <q-item-section>{{ $t(link.label) }}</q-item-section>
+          </q-item>
+        </q-list>
+      </q-scroll-area>
 
-      <div class="absolute-bottom q-pa-md">
-        <div class="text-caption text-grey-7 q-mb-xs">
-          <q-icon name="storage" size="xs" class="q-mr-xs" />
-          {{ formatBytes(auth.user?.used_bytes) }}
-          <span v-if="auth.user?.quota_bytes"> {{ $t('nav.of') }} {{ formatBytes(auth.user.quota_bytes) }}</span>
-          <span v-else> {{ $t('nav.used') }}</span>
+      <div class="absolute-bottom">
+        <div class="fs-usage">
+          <div class="row items-center text-caption" style="color: var(--fs-text-muted)">
+            <q-icon name="cloud_done" size="18px" class="q-mr-xs" />
+            <span>{{ formatBytes(auth.user?.used_bytes) }}</span>
+            <span v-if="auth.user?.quota_bytes">&nbsp;{{ $t('nav.of') }} {{ formatBytes(auth.user.quota_bytes) }}</span>
+            <span v-else>&nbsp;{{ $t('nav.used') }}</span>
+          </div>
+          <q-linear-progress v-if="auth.user?.quota_bytes" :value="auth.usagePercent / 100" :color="auth.usagePercent > 90 ? 'negative' : 'primary'" rounded size="6px" class="q-mt-sm" track-color="grey-3" />
         </div>
-        <q-linear-progress v-if="auth.user?.quota_bytes" :value="auth.usagePercent / 100" :color="auth.usagePercent > 90 ? 'negative' : 'primary'" rounded size="6px" />
       </div>
     </q-drawer>
 
@@ -80,13 +87,14 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { formatBytes } from '@/utils/format'
 import { LOCALES, setLocale } from '@/boot/i18n'
-import { useI18n } from 'vue-i18n'
 
 const { locale } = useI18n()
-
+const $q = useQuasar()
 const auth = useAuthStore()
 const router = useRouter()
 const drawerOpen = ref(false)
@@ -102,7 +110,22 @@ const collabLinks = [
   { name: 'activities', label: 'nav.activity', icon: 'history' },
 ]
 
+const initials = computed(() => (auth.user?.name || '?').trim().charAt(0).toUpperCase())
 const adminUrl = computed(() => import.meta.env.API_URL.replace(/\/api\/v1\/?$/, '') + '/admin')
+
+function toggleDark() {
+  $q.dark.toggle()
+  try {
+    localStorage.setItem('fs_dark', $q.dark.isActive ? '1' : '0')
+  } catch {
+    /* ignore */
+  }
+}
+try {
+  if (localStorage.getItem('fs_dark') === '1') $q.dark.set(true)
+} catch {
+  /* ignore */
+}
 
 async function logout() {
   await auth.logout()

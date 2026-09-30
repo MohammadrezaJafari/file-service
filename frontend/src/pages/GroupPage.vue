@@ -11,7 +11,7 @@
 
     <div class="row q-col-gutter-lg">
       <div class="col-12 col-md-6">
-        <q-card flat bordered>
+        <q-card flat class="fs-card">
           <q-card-section class="row items-center">
             <div class="text-subtitle1">{{ $t('groups.membersTitle') }}</div>
             <q-space />
@@ -36,7 +36,7 @@
         </q-card>
       </div>
       <div class="col-12 col-md-6">
-        <q-card flat bordered>
+        <q-card flat class="fs-card">
           <q-card-section class="text-subtitle1">{{ $t('groups.libraries') }}</q-card-section>
           <q-list separator>
             <q-item v-for="s in shares" :key="s.id" clickable @click="openShare(s)">

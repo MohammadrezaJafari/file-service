@@ -2,11 +2,11 @@
   <q-page padding>
     <div class="page-title q-mb-md">{{ $t('shared.title') }}</div>
     <q-inner-loading :showing="loading" />
-    <div v-if="!loading && !items.length" class="text-center text-grey-6 q-pa-xl">
+    <div v-if="!loading && !items.length" class="fs-card fs-empty">
       <q-icon name="folder_shared" size="64px" />
       <div class="q-mt-md">{{ $t('shared.empty') }}</div>
     </div>
-    <q-list v-else bordered separator class="rounded-borders">
+    <q-list v-else separator class="fs-card">
       <q-item v-for="it in items" :key="it.share_id" clickable @click="open(it)">
         <q-item-section avatar><q-icon :name="it.folder ? 'folder_shared' : 'inventory_2'" color="primary" /></q-item-section>
         <q-item-section>
