@@ -2,7 +2,7 @@ import { defineConfig } from '#q-app'
 
 export default defineConfig((/* ctx */) => {
   return {
-    boot: ['axios', 'auth'],
+    boot: ['i18n', 'axios', 'auth'],
 
     css: ['app.scss'],
 
@@ -26,8 +26,9 @@ export default defineConfig((/* ctx */) => {
     },
 
     framework: {
+      lang: 'fa-IR',
       config: {
-        notify: { position: 'bottom-right', timeout: 2500 },
+        notify: { position: 'bottom-left', timeout: 2500 },
       },
       plugins: ['Notify', 'Dialog', 'Loading', 'LocalStorage'],
     },

@@ -2,12 +2,12 @@
   <q-page padding>
     <div class="row items-center q-mb-md q-gutter-sm">
       <q-btn flat round icon="arrow_back" :to="{ name: 'library', params: { id: libraryId } }" />
-      <div class="page-title">Trash <span class="text-grey-6 text-subtitle1">· {{ library?.name }}</span></div>
+      <div class="page-title">{{ $t('trash.title') }} <span class="text-grey-6 text-subtitle1">· {{ library?.name }}</span></div>
       <q-space />
-      <q-btn v-if="library?.is_owner && rows.length" flat color="negative" icon="delete_forever" label="Empty trash" @click="emptyTrash" />
+      <q-btn v-if="library?.is_owner && rows.length" flat color="negative" icon="delete_forever" :label="$t('trash.emptyTrash')" @click="emptyTrash" />
     </div>
 
-    <q-table flat bordered :rows="rows" :columns="columns" row-key="id" :loading="loading" :pagination="{ rowsPerPage: 0 }" hide-pagination no-data-label="Trash is empty">
+    <q-table flat bordered :rows="rows" :columns="columns" row-key="id" :loading="loading" :pagination="{ rowsPerPage: 0 }" hide-pagination :no-data-label="$t('trash.empty')">
       <template #body-cell-name="p">
         <q-td :props="p">
           <div class="row items-center no-wrap">
@@ -23,8 +23,8 @@
       <template #body-cell-deleted_at="p"><q-td :props="p">{{ formatDate(p.row.deleted_at) }}</q-td></template>
       <template #body-cell-actions="p">
         <q-td :props="p" auto-width>
-          <q-btn flat dense round icon="restore" color="primary" aria-label="Restore" @click="restore(p.row)"><q-tooltip>Restore</q-tooltip></q-btn>
-          <q-btn v-if="library?.is_owner" flat dense round icon="delete_forever" color="negative" aria-label="Delete permanently" @click="purge(p.row)"><q-tooltip>Delete permanently</q-tooltip></q-btn>
+          <q-btn flat dense round icon="restore" color="primary" :aria-label="$t('common.restore')" @click="restore(p.row)"><q-tooltip>{{ $t('common.restore') }}</q-tooltip></q-btn>
+          <q-btn v-if="library?.is_owner" flat dense round icon="delete_forever" color="negative" :aria-label="$t('trash.purge')" @click="purge(p.row)"><q-tooltip>{{ $t('trash.purge') }}</q-tooltip></q-btn>
         </q-td>
       </template>
     </q-table>
@@ -32,6 +32,7 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
@@ -41,18 +42,19 @@ import { formatBytes, formatDate, fileIcon, fileColor, errorMessage } from '@/ut
 
 const route = useRoute()
 const $q = useQuasar()
+const { t } = useI18n()
 const auth = useAuthStore()
 const libraryId = computed(() => Number(route.params.id))
 const library = ref(null)
 const rows = ref([])
 const loading = ref(false)
 
-const columns = [
-  { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
-  { name: 'size', label: 'Size', field: 'size', align: 'right', sortable: true },
-  { name: 'deleted_at', label: 'Deleted', field: 'deleted_at', align: 'right', sortable: true },
+const columns = computed(() => [
+  { name: 'name', label: t('common.name'), field: 'name', align: 'left', sortable: true },
+  { name: 'size', label: t('common.size'), field: 'size', align: 'right', sortable: true },
+  { name: 'deleted_at', label: t('common.deleted'), field: 'deleted_at', align: 'right', sortable: true },
   { name: 'actions', label: '', field: 'id', align: 'right' },
-]
+])
 
 async function load() {
   loading.value = true
@@ -70,7 +72,7 @@ async function load() {
 async function restore(node) {
   try {
     await api.post(`/libraries/${libraryId.value}/trash/${node.id}/restore`)
-    $q.notify({ type: 'positive', message: `Restored "${node.name}"` })
+    $q.notify({ type: 'positive', message: t('trash.restored', { name: node.name }) })
     load()
   } catch (e) {
     $q.notify({ type: 'negative', message: errorMessage(e) })
@@ -78,7 +80,7 @@ async function restore(node) {
 }
 
 function purge(node) {
-  $q.dialog({ title: 'Delete permanently', message: `Permanently delete "${node.name}"? This cannot be undone.`, cancel: true, ok: { label: 'Delete', color: 'negative', unelevated: true } }).onOk(async () => {
+  $q.dialog({ title: t('trash.purge'), message: t('trash.purgeMsg', { name: node.name }), cancel: t('common.cancel'), ok: { label: t('common.delete'), color: 'negative', unelevated: true } }).onOk(async () => {
     try {
       await api.delete(`/libraries/${libraryId.value}/trash/${node.id}`)
       load()
@@ -90,7 +92,7 @@ function purge(node) {
 }
 
 function emptyTrash() {
-  $q.dialog({ title: 'Empty trash', message: 'Permanently delete everything in the trash?', cancel: true, ok: { label: 'Empty trash', color: 'negative', unelevated: true } }).onOk(async () => {
+  $q.dialog({ title: t('trash.emptyTrash'), message: t('trash.emptyMsg'), cancel: t('common.cancel'), ok: { label: t('trash.emptyTrash'), color: 'negative', unelevated: true } }).onOk(async () => {
     try {
       await api.delete(`/libraries/${libraryId.value}/trash`)
       load()

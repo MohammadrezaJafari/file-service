@@ -1,10 +1,10 @@
 <template>
   <q-page padding>
-    <div class="page-title q-mb-md">Starred</div>
+    <div class="page-title q-mb-md">{{ $t('starred.title') }}</div>
     <q-inner-loading :showing="loading" />
     <div v-if="!loading && !items.length" class="text-center text-grey-6 q-pa-xl">
       <q-icon name="star_border" size="64px" />
-      <div class="q-mt-md">Star files and folders to find them quickly here.</div>
+      <div class="q-mt-md">{{ $t('starred.empty') }}</div>
     </div>
     <q-list v-else bordered separator class="rounded-borders">
       <q-item v-for="n in items" :key="n.id" clickable @click="open(n)">
@@ -15,7 +15,7 @@
         </q-item-section>
         <q-item-section side class="text-caption">{{ n.type === 'file' ? formatBytes(n.size) : '' }}</q-item-section>
         <q-item-section side>
-          <q-btn flat round dense icon="star" color="amber" @click.stop="unstar(n)"><q-tooltip>Unstar</q-tooltip></q-btn>
+          <q-btn flat round dense icon="star" color="amber" @click.stop="unstar(n)"><q-tooltip>{{ $t('common.unstar') }}</q-tooltip></q-btn>
         </q-item-section>
       </q-item>
     </q-list>

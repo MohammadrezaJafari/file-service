@@ -2,14 +2,14 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide">
     <q-card style="min-width: 420px">
       <q-form @submit="submit">
-        <q-card-section class="text-h6">{{ library ? 'Edit library' : 'New library' }}</q-card-section>
+        <q-card-section class="text-h6">{{ library ? $t('libraries.edit') : $t('libraries.new') }}</q-card-section>
         <q-card-section class="q-gutter-md">
-          <q-input v-model="form.name" label="Name" outlined autofocus :rules="[(v) => !!v || 'Required']" />
-          <q-input v-model="form.description" label="Description" type="textarea" outlined autogrow />
+          <q-input v-model="form.name" :label="$t('common.name')" outlined autofocus :rules="[(v) => !!v || $t('common.required')]" />
+          <q-input v-model="form.description" :label="$t('libraries.description')" type="textarea" outlined autogrow />
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat label="Cancel" @click="onDialogCancel" />
-          <q-btn type="submit" color="primary" unelevated :label="library ? 'Save' : 'Create'" :loading="loading" />
+          <q-btn flat :label="$t('common.cancel')" @click="onDialogCancel" />
+          <q-btn type="submit" color="primary" unelevated :label="library ? $t('common.save') : $t('common.create')" :loading="loading" />
         </q-card-actions>
       </q-form>
     </q-card>

@@ -2,14 +2,14 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide">
     <q-card style="min-width: 480px; max-width: 95vw">
       <q-card-section>
-        <div class="text-h6">{{ title }}</div>
+        <div class="text-h6">{{ title || $t('picker.select') }}</div>
       </q-card-section>
       <q-card-section class="q-pt-none">
-        <q-select v-model="libraryId" outlined dense label="Library" :options="libraries" option-label="name" option-value="id" emit-value map-options @update:model-value="reset" />
+        <q-select v-model="libraryId" outlined dense :label="$t('picker.library')" :options="libraries" option-label="name" option-value="id" emit-value map-options @update:model-value="reset" />
       </q-card-section>
       <q-card-section class="q-pt-none">
         <q-breadcrumbs class="q-mb-sm text-caption">
-          <q-breadcrumbs-el label="Root" icon="home" class="cursor-pointer" @click="goTo(null)" />
+          <q-breadcrumbs-el :label="$t('picker.root')" icon="home" class="cursor-pointer" @click="goTo(null)" />
           <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.name" class="cursor-pointer" @click="goTo(b.id)" />
         </q-breadcrumbs>
         <q-list bordered separator dense style="max-height: 300px; overflow: auto">
@@ -18,12 +18,12 @@
             <q-item-section>{{ f.name }}</q-item-section>
             <q-item-section side><q-icon name="chevron_right" /></q-item-section>
           </q-item>
-          <q-item v-if="!folders.length && !loading"><q-item-section class="text-grey-6">No subfolders</q-item-section></q-item>
+          <q-item v-if="!folders.length && !loading"><q-item-section class="text-grey-6">{{ $t('picker.noSubfolders') }}</q-item-section></q-item>
         </q-list>
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" @click="onDialogCancel" />
-        <q-btn color="primary" unelevated :label="okLabel" :disable="currentId === excludeId" @click="onDialogOK({ library_id: libraryId, parent_id: currentId })" />
+        <q-btn flat :label="$t('common.cancel')" @click="onDialogCancel" />
+        <q-btn color="primary" unelevated :label="okLabel || $t('picker.select')" :disable="currentId === excludeId" @click="onDialogOK({ library_id: libraryId, parent_id: currentId })" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -35,8 +35,8 @@ import { useDialogPluginComponent } from 'quasar'
 import { api } from '@/boot/axios'
 
 const props = defineProps({
-  title: { type: String, default: 'Select destination' },
-  okLabel: { type: String, default: 'Select' },
+  title: { type: String, default: '' },
+  okLabel: { type: String, default: '' },
   initialLibraryId: { type: Number, default: null },
   excludeId: { type: Number, default: null },
 })

@@ -1,7 +1,7 @@
 <template>
   <q-card v-if="items.length" class="fixed-bottom-right q-ma-md shadow-8" style="width: 360px; z-index: 3000">
     <q-bar class="bg-primary text-white">
-      <div>Uploads ({{ done }}/{{ items.length }})</div>
+      <div>{{ $t('uploads.title', { done, total: items.length }) }}</div>
       <q-space />
       <q-btn flat dense round :icon="collapsed ? 'expand_less' : 'expand_more'" @click="collapsed = !collapsed" />
       <q-btn flat dense round icon="close" :disable="active > 0" @click="clear" />
@@ -23,9 +23,12 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { ref, computed } from 'vue'
 import { api } from '@/boot/axios'
 import { formatBytes, errorMessage } from '@/utils/format'
+
+const { t } = useI18n()
 
 const emit = defineEmits(['uploaded', 'finished'])
 const items = ref([])
@@ -67,7 +70,7 @@ async function upload(item) {
     emit('uploaded', data)
   } catch (e) {
     item.status = 'error'
-    item.error = errorMessage(e, 'Upload failed')
+    item.error = errorMessage(e, t('uploads.failed'))
   } finally {
     if (active.value === 0) emit('finished')
     pump()

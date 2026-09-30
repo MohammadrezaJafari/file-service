@@ -7,7 +7,7 @@
           <q-icon :name="info.type === 'file' ? fileIcon(info.file) : 'folder_shared'" :color="info.type === 'file' ? fileColor(info.file) : 'primary'" size="40px" class="q-mr-md" />
           <div class="ellipsis">
             <div class="text-h6 ellipsis">{{ info.name }}</div>
-            <div class="text-caption text-grey-7">Shared by {{ info.owner }}<span v-if="info.expires_at"> · expires {{ formatDate(info.expires_at) }}</span></div>
+            <div class="text-caption text-grey-7">{{ $t('public.sharedBy', { name: info.owner }) }}<span v-if="info.expires_at"> · {{ $t('public.expires', { date: formatDate(info.expires_at) }) }}</span></div>
           </div>
         </div>
       </q-card-section>
@@ -15,16 +15,16 @@
       <!-- password gate -->
       <q-card-section v-if="info.locked">
         <q-form @submit="unlock" class="q-gutter-sm">
-          <q-input v-model="password" type="password" outlined dense label="This link is password protected" autofocus :error="!!pwError" :error-message="pwError" />
-          <q-btn type="submit" color="primary" unelevated label="Unlock" :loading="unlocking" />
+          <q-input v-model="password" type="password" outlined dense :label="$t('public.locked')" autofocus :error="!!pwError" :error-message="pwError" />
+          <q-btn type="submit" color="primary" unelevated :label="$t('public.unlock')" :loading="unlocking" />
         </q-form>
       </q-card-section>
 
       <!-- single file -->
       <q-card-section v-else-if="info.type === 'file'">
         <div class="text-grey-8 q-mb-md">{{ formatBytes(info.file.size) }} · {{ info.file.mime_type }}</div>
-        <q-btn v-if="info.allow_download" color="primary" unelevated icon="download" label="Download" :href="downloadUrl()" />
-        <div v-else class="text-grey-6">Downloading is disabled for this link.</div>
+        <q-btn v-if="info.allow_download" color="primary" unelevated icon="download" :label="$t('common.download')" :href="downloadUrl()" />
+        <div v-else class="text-grey-6">{{ $t('public.downloadDisabled') }}</div>
       </q-card-section>
 
       <!-- folder browse -->
@@ -40,13 +40,13 @@
             <q-item-section avatar><q-icon :name="fileIcon(n)" :color="fileColor(n)" /></q-item-section>
             <q-item-section>
               <q-item-label>{{ n.name }}</q-item-label>
-              <q-item-label caption>{{ n.type === 'file' ? formatBytes(n.size) : 'Folder' }} · {{ formatDate(n.updated_at) }}</q-item-label>
+              <q-item-label caption>{{ n.type === 'file' ? formatBytes(n.size) : $t('common.folder') }} · {{ formatDate(n.updated_at) }}</q-item-label>
             </q-item-section>
             <q-item-section v-if="n.type === 'file' && info.allow_download" side>
               <q-btn flat round dense icon="download" :href="downloadUrl(n.id)" @click.stop />
             </q-item-section>
           </q-item>
-          <q-item v-if="!items.length"><q-item-section class="text-grey-6">This folder is empty.</q-item-section></q-item>
+          <q-item v-if="!items.length"><q-item-section class="text-grey-6">{{ $t('public.emptyFolder') }}</q-item-section></q-item>
         </q-list>
       </template>
     </template>
@@ -58,10 +58,13 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '@/boot/axios'
 import { fileIcon, fileColor, formatBytes, formatDate, errorMessage } from '@/utils/format'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const token = route.params.token
@@ -83,7 +86,7 @@ async function load() {
     info.value = data
     if (!data.locked && data.type === 'folder') await browse(null)
   } catch (e) {
-    error.value = errorMessage(e, 'This link is invalid or has expired.')
+    error.value = errorMessage(e, t('public.invalid'))
   } finally {
     loading.value = false
   }
@@ -95,7 +98,7 @@ async function unlock() {
     await api.post(`/share/${token}/verify`, { password: password.value })
     await load()
   } catch {
-    pwError.value = 'Wrong password'
+    pwError.value = t('public.wrongPassword')
   } finally {
     unlocking.value = false
   }

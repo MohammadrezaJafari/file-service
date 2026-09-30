@@ -1,7 +1,7 @@
 <template>
   <q-page padding>
-    <div class="page-title q-mb-md">Share links</div>
-    <q-table flat bordered :rows="links" :columns="columns" row-key="id" :loading="loading" :pagination="{ rowsPerPage: 25 }" no-data-label="You have not created any links yet">
+    <div class="page-title q-mb-md">{{ $t('links.title') }}</div>
+    <q-table flat bordered :rows="links" :columns="columns" row-key="id" :loading="loading" :pagination="{ rowsPerPage: 25 }" :no-data-label="$t('links.empty')">
       <template #body-cell-name="p">
         <q-td :props="p">
           <div class="row items-center no-wrap">
@@ -14,7 +14,7 @@
         </q-td>
       </template>
       <template #body-cell-kind="p">
-        <q-td :props="p"><q-chip dense :icon="p.row.kind === 'upload' ? 'upload' : 'download'" :label="p.row.kind" /></q-td>
+        <q-td :props="p"><q-chip dense :icon="p.row.kind === 'upload' ? 'upload' : 'download'" :label="$t(`links.kinds.${p.row.kind}`)" /></q-td>
       </template>
       <template #body-cell-url="p">
         <q-td :props="p">
@@ -26,10 +26,10 @@
       </template>
       <template #body-cell-status="p">
         <q-td :props="p">
-          <q-icon v-if="p.row.has_password" name="lock" size="16px" class="q-mr-xs"><q-tooltip>Password protected</q-tooltip></q-icon>
-          <span v-if="p.row.is_expired" class="text-negative">Expired</span>
-          <span v-else-if="p.row.expires_at">Expires {{ formatDate(p.row.expires_at) }}</span>
-          <span v-else class="text-grey-7">No expiry</span>
+          <q-icon v-if="p.row.has_password" name="lock" size="16px" class="q-mr-xs"><q-tooltip>{{ $t('link.protected') }}</q-tooltip></q-icon>
+          <span v-if="p.row.is_expired" class="text-negative">{{ $t('links.expired') }}</span>
+          <span v-else-if="p.row.expires_at">{{ $t('link.expiresAt', { date: formatDate(p.row.expires_at) }) }}</span>
+          <span v-else class="text-grey-7">{{ $t('links.noExpiry') }}</span>
         </q-td>
       </template>
       <template #body-cell-actions="p">
@@ -42,23 +42,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { ref, computed, onMounted } from 'vue'
 import { useQuasar, copyToClipboard } from 'quasar'
 import { api } from '@/boot/axios'
 import { fileIcon, fileColor, formatDate, errorMessage } from '@/utils/format'
 
 const $q = useQuasar()
+const { t } = useI18n()
 const links = ref([])
 const loading = ref(false)
-const columns = [
-  { name: 'name', label: 'Item', field: 'id', align: 'left' },
-  { name: 'kind', label: 'Type', field: 'kind', align: 'left' },
-  { name: 'url', label: 'Link', field: 'url', align: 'left' },
-  { name: 'status', label: 'Status', field: 'expires_at', align: 'left' },
-  { name: 'view_count', label: 'Views', field: 'view_count', align: 'right' },
-  { name: 'download_count', label: 'Downloads', field: 'download_count', align: 'right' },
+const columns = computed(() => [
+  { name: 'name', label: t('links.item'), field: 'id', align: 'left' },
+  { name: 'kind', label: t('links.type'), field: 'kind', align: 'left' },
+  { name: 'url', label: t('links.link'), field: 'url', align: 'left' },
+  { name: 'status', label: t('links.status'), field: 'expires_at', align: 'left' },
+  { name: 'view_count', label: t('links.views'), field: 'view_count', align: 'right' },
+  { name: 'download_count', label: t('links.downloads'), field: 'download_count', align: 'right' },
   { name: 'actions', label: '', field: 'id' },
-]
+])
 
 async function load() {
   loading.value = true
@@ -70,10 +72,10 @@ async function load() {
   }
 }
 function copy(text) {
-  copyToClipboard(text).then(() => $q.notify({ type: 'positive', message: 'Copied' }))
+  copyToClipboard(text).then(() => $q.notify({ type: 'positive', message: t('common.copied') }))
 }
 function remove(link) {
-  $q.dialog({ title: 'Delete link', message: 'Delete this share link? Anyone using it will lose access.', cancel: true, ok: { label: 'Delete', color: 'negative', unelevated: true } }).onOk(async () => {
+  $q.dialog({ title: t('links.deleteTitle'), message: t('links.deleteMsg'), cancel: t('common.cancel'), ok: { label: t('common.delete'), color: 'negative', unelevated: true } }).onOk(async () => {
     try {
       await api.delete(`/share-links/${link.id}`)
       load()

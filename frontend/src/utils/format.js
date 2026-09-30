@@ -1,26 +1,35 @@
-import { date } from 'quasar'
+import { i18n } from '@/boot/i18n'
+
+function locale() {
+  return i18n.global.locale.value
+}
+
+function intlLocale() {
+  return locale() === 'fa-IR' ? 'fa-IR-u-ca-persian-nu-latn' : 'en-US'
+}
 
 export function formatBytes(bytes, decimals = 1) {
   if (bytes === null || bytes === undefined) return '—'
-  if (bytes === 0) return '0 B'
+  if (bytes === 0) return locale() === 'fa-IR' ? '۰ بایت' : '0 B'
   const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const sizes = locale() === 'fa-IR' ? ['بایت', 'کیلوبایت', 'مگابایت', 'گیگابایت', 'ترابایت'] : ['B', 'KB', 'MB', 'GB', 'TB']
   const i = Math.min(sizes.length - 1, Math.floor(Math.log(bytes) / Math.log(k)))
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(i === 0 ? 0 : decimals))} ${sizes[i]}`
 }
 
 export function formatDate(value) {
   if (!value) return '—'
-  return date.formatDate(value, 'YYYY-MM-DD HH:mm')
+  return new Intl.DateTimeFormat(intlLocale(), { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value))
 }
 
 export function timeAgo(value) {
   if (!value) return ''
+  const t = i18n.global.t
   const diff = (Date.now() - new Date(value).getTime()) / 1000
-  if (diff < 60) return 'just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)} h ago`
-  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} d ago`
+  if (diff < 60) return t('time.justNow')
+  if (diff < 3600) return t('time.minutes', { n: Math.floor(diff / 60) })
+  if (diff < 86400) return t('time.hours', { n: Math.floor(diff / 3600) })
+  if (diff < 86400 * 7) return t('time.days', { n: Math.floor(diff / 86400) })
   return formatDate(value)
 }
 
@@ -61,7 +70,8 @@ export function fileColor(node) {
   )
 }
 
-export function errorMessage(error, fallback = 'Something went wrong') {
+export function errorMessage(error, fallback = null) {
+  fallback = fallback || i18n.global.t('common.error')
   const data = error?.response?.data
   if (data?.errors) {
     const first = Object.values(data.errors)[0]

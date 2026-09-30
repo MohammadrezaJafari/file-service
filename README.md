@@ -23,6 +23,7 @@ file-service/
 | Groups | Create groups, add members with admin/member roles, share libraries to a group |
 | Starred | Star files/folders for quick access |
 | Activity | Per-library / per-user activity log (create, rename, move, delete, share, download, …) |
+| Languages | Persian (RTL, default) and English UI with a language switcher; Jalali dates in Persian |
 | Admin panel | Filament: users (quota, admin flag, activate/deactivate), libraries (browse files, trash, shares), groups, share links, activity log, global settings, dashboard stats |
 
 ## Requirements

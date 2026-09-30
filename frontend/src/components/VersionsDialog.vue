@@ -2,7 +2,7 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide">
     <q-card style="min-width: 560px; max-width: 95vw">
       <q-card-section>
-        <div class="text-h6">Version history</div>
+        <div class="text-h6">{{ $t('versions.title') }}</div>
         <div class="text-caption text-grey-7">{{ node.name }}</div>
       </q-card-section>
       <q-card-section class="q-pt-none">
@@ -17,21 +17,22 @@
             </q-item-section>
             <q-item-section side>
               <div class="row q-gutter-xs">
-                <q-btn flat dense round icon="download" @click="download(v)"><q-tooltip>Download this version</q-tooltip></q-btn>
-                <q-btn v-if="v.version_number !== current && canWrite" flat dense round icon="restore" color="primary" @click="restore(v)"><q-tooltip>Restore this version</q-tooltip></q-btn>
+                <q-btn flat dense round icon="download" @click="download(v)"><q-tooltip>{{ $t('versions.downloadThis') }}</q-tooltip></q-btn>
+                <q-btn v-if="v.version_number !== current && canWrite" flat dense round icon="restore" color="primary" @click="restore(v)"><q-tooltip>{{ $t('versions.restoreThis') }}</q-tooltip></q-btn>
               </div>
             </q-item-section>
           </q-item>
         </q-list>
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn flat label="Close" @click="onDialogCancel" />
+        <q-btn flat :label="$t('common.close')" @click="onDialogCancel" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted } from 'vue'
 import { useDialogPluginComponent, useQuasar } from 'quasar'
 import { api } from '@/boot/axios'
@@ -41,6 +42,7 @@ const props = defineProps({ node: { type: Object, required: true }, canWrite: { 
 defineEmits([...useDialogPluginComponent.emits])
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent()
 const $q = useQuasar()
+const { t } = useI18n()
 const versions = ref([])
 const current = ref(props.node.version_number)
 
@@ -61,7 +63,7 @@ async function download(v) {
 }
 
 function restore(v) {
-  $q.dialog({ title: 'Restore version', message: `Restore version ${v.version_number}? The current content will be kept in history.`, cancel: true }).onOk(async () => {
+  $q.dialog({ title: t('versions.restoreTitle'), message: t('versions.restoreMsg', { n: v.version_number }), cancel: t('common.cancel'), ok: t('common.ok') }).onOk(async () => {
     try {
       const { data } = await api.post(`/nodes/${props.node.id}/versions/${v.id}/restore`)
       current.value = data.version_number

@@ -6,33 +6,33 @@
         <q-breadcrumbs-el icon="inventory_2" :label="library?.name || '…'" :to="{ name: 'library', params: { id: libraryId } }" />
         <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.name" :to="{ name: 'folder', params: { id: libraryId, folderId: b.id } }" />
       </q-breadcrumbs>
-      <q-chip v-if="permission === 'r'" dense color="grey-3" icon="visibility" label="Read only" />
+      <q-chip v-if="permission === 'r'" dense color="grey-3" icon="visibility" :label="$t('common.readOnly')" />
       <q-space />
-      <q-input v-model="search" dense outlined placeholder="Search in library" debounce="400" style="width: 240px" clearable @update:model-value="doSearch">
+      <q-input v-model="search" dense outlined :placeholder="$t('browser.search')" debounce="400" style="width: 240px" clearable @update:model-value="doSearch">
         <template #prepend><q-icon name="search" /></template>
       </q-input>
       <q-btn-group v-if="canWrite" unelevated>
-        <q-btn color="primary" icon="upload" label="Upload" @click="fileInput.click()" />
-        <q-btn color="primary" icon="create_new_folder" aria-label="New folder" @click="newFolder"><q-tooltip>New folder</q-tooltip></q-btn>
+        <q-btn color="primary" icon="upload" :label="$t('common.upload')" @click="fileInput.click()" />
+        <q-btn color="primary" icon="create_new_folder" :aria-label="$t('browser.newFolder')" @click="newFolder"><q-tooltip>{{ $t('browser.newFolder') }}</q-tooltip></q-btn>
       </q-btn-group>
-      <q-btn flat round icon="more_vert" aria-label="Library menu">
+      <q-btn flat round icon="more_vert" :aria-label="$t('common.actions')">
         <q-menu>
           <q-list dense style="min-width: 200px">
             <q-item v-if="library?.is_owner" clickable v-close-popup @click="shareCurrent">
               <q-item-section avatar><q-icon name="share" /></q-item-section>
-              <q-item-section>Share {{ folder ? 'this folder' : 'library' }}</q-item-section>
+              <q-item-section>{{ folder ? $t('browser.shareThis') : $t('browser.shareLibrary') }}</q-item-section>
             </q-item>
             <q-item clickable v-close-popup @click="linkCurrent">
               <q-item-section avatar><q-icon name="link" /></q-item-section>
-              <q-item-section>Get link</q-item-section>
+              <q-item-section>{{ $t('common.getLink') }}</q-item-section>
             </q-item>
             <q-item v-if="folder" clickable v-close-popup @click="download(folder)">
               <q-item-section avatar><q-icon name="download" /></q-item-section>
-              <q-item-section>Download as ZIP</q-item-section>
+              <q-item-section>{{ $t('browser.downloadZip') }}</q-item-section>
             </q-item>
             <q-item clickable v-close-popup :to="{ name: 'trash', params: { id: libraryId } }">
               <q-item-section avatar><q-icon name="delete_outline" /></q-item-section>
-              <q-item-section>Trash</q-item-section>
+              <q-item-section>{{ $t('common.trash') }}</q-item-section>
             </q-item>
           </q-list>
         </q-menu>
@@ -43,11 +43,11 @@
     <!-- Bulk toolbar -->
     <q-slide-transition>
       <div v-if="selected.length" class="row items-center q-gutter-sm q-mb-sm bg-blue-1 q-pa-sm rounded-borders">
-        <div class="text-primary">{{ selected.length }} selected</div>
-        <q-btn flat dense icon="download" label="Download" @click="selected.forEach(download)" />
-        <q-btn v-if="canWrite" flat dense icon="drive_file_move" label="Move" @click="moveCopy(selected, 'move')" />
-        <q-btn flat dense icon="file_copy" label="Copy" @click="moveCopy(selected, 'copy')" />
-        <q-btn v-if="canWrite" flat dense icon="delete" label="Delete" color="negative" @click="remove(selected)" />
+        <div class="text-primary">{{ $t('browser.selected', { n: selected.length }) }}</div>
+        <q-btn flat dense icon="download" :label="$t('common.download')" @click="selected.forEach(download)" />
+        <q-btn v-if="canWrite" flat dense icon="drive_file_move" :label="$t('common.move')" @click="moveCopy(selected, 'move')" />
+        <q-btn flat dense icon="file_copy" :label="$t('common.copy')" @click="moveCopy(selected, 'copy')" />
+        <q-btn v-if="canWrite" flat dense icon="delete" :label="$t('common.delete')" color="negative" @click="remove(selected)" />
         <q-space />
         <q-btn flat dense round icon="close" @click="selected = []" />
       </div>
@@ -66,7 +66,7 @@
       :pagination="{ rowsPerPage: 0 }"
       hide-pagination
       binary-state-sort
-      :no-data-label="searchMode ? 'No results' : 'This folder is empty'"
+      :no-data-label="searchMode ? $t('browser.noResults') : $t('browser.empty')"
     >
       <template #body-cell-name="p">
         <q-td :props="p" class="file-row" @click="open(p.row)" @dblclick.prevent>
@@ -91,45 +91,45 @@
       </template>
       <template #body-cell-actions="p">
         <q-td :props="p" auto-width @click.stop>
-          <q-btn flat round dense icon="more_horiz" aria-label="Actions">
+          <q-btn flat round dense icon="more_horiz" :aria-label="$t('common.actions')">
             <q-menu>
               <q-list dense style="min-width: 190px">
                 <q-item clickable v-close-popup @click="download(p.row)">
                   <q-item-section avatar><q-icon name="download" /></q-item-section>
-                  <q-item-section>Download{{ p.row.type === 'folder' ? ' (ZIP)' : '' }}</q-item-section>
+                  <q-item-section>{{ $t('common.download') }}{{ p.row.type === 'folder' ? ' ' + $t('browser.zip') : '' }}</q-item-section>
                 </q-item>
                 <q-item clickable v-close-popup @click="toggleStar(p.row)">
                   <q-item-section avatar><q-icon :name="p.row.is_starred ? 'star' : 'star_border'" /></q-item-section>
-                  <q-item-section>{{ p.row.is_starred ? 'Unstar' : 'Star' }}</q-item-section>
+                  <q-item-section>{{ p.row.is_starred ? $t('common.unstar') : $t('common.star') }}</q-item-section>
                 </q-item>
                 <q-item clickable v-close-popup @click="link(p.row)">
                   <q-item-section avatar><q-icon name="link" /></q-item-section>
-                  <q-item-section>Get link</q-item-section>
+                  <q-item-section>{{ $t('common.getLink') }}</q-item-section>
                 </q-item>
                 <q-item v-if="library?.is_owner && p.row.type === 'folder'" clickable v-close-popup @click="share(p.row)">
                   <q-item-section avatar><q-icon name="share" /></q-item-section>
-                  <q-item-section>Share folder</q-item-section>
+                  <q-item-section>{{ $t('browser.shareFolder') }}</q-item-section>
                 </q-item>
                 <q-item v-if="p.row.type === 'file'" clickable v-close-popup @click="versions(p.row)">
                   <q-item-section avatar><q-icon name="history" /></q-item-section>
-                  <q-item-section>History</q-item-section>
+                  <q-item-section>{{ $t('common.history') }}</q-item-section>
                 </q-item>
                 <q-separator />
                 <q-item v-if="canWrite" clickable v-close-popup @click="rename(p.row)">
                   <q-item-section avatar><q-icon name="edit" /></q-item-section>
-                  <q-item-section>Rename</q-item-section>
+                  <q-item-section>{{ $t('common.rename') }}</q-item-section>
                 </q-item>
                 <q-item v-if="canWrite" clickable v-close-popup @click="moveCopy([p.row], 'move')">
                   <q-item-section avatar><q-icon name="drive_file_move" /></q-item-section>
-                  <q-item-section>Move</q-item-section>
+                  <q-item-section>{{ $t('common.move') }}</q-item-section>
                 </q-item>
                 <q-item clickable v-close-popup @click="moveCopy([p.row], 'copy')">
                   <q-item-section avatar><q-icon name="file_copy" /></q-item-section>
-                  <q-item-section>Copy</q-item-section>
+                  <q-item-section>{{ $t('common.copy') }}</q-item-section>
                 </q-item>
                 <q-item v-if="canWrite" clickable v-close-popup class="text-negative" @click="remove([p.row])">
                   <q-item-section avatar><q-icon name="delete" /></q-item-section>
-                  <q-item-section>Delete</q-item-section>
+                  <q-item-section>{{ $t('common.delete') }}</q-item-section>
                 </q-item>
               </q-list>
             </q-menu>
@@ -140,7 +140,7 @@
 
     <div v-if="canWrite && !rows.length && !loading && !searchMode" class="text-center text-grey-6 q-pa-lg">
       <q-icon name="cloud_upload" size="48px" />
-      <div class="q-mt-sm">Drag & drop files here to upload</div>
+      <div class="q-mt-sm">{{ $t('browser.dropHint') }}</div>
     </div>
 
     <UploadQueue ref="uploader" @uploaded="onUploaded" />
@@ -151,6 +151,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
+import { useI18n } from 'vue-i18n'
 import { api } from '@/boot/axios'
 import { useAuthStore } from '@/stores/auth'
 import { formatBytes, formatDate, timeAgo, fileIcon, fileColor, errorMessage, isPreviewable } from '@/utils/format'
@@ -166,6 +167,7 @@ const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
 const auth = useAuthStore()
+const { t } = useI18n()
 
 const libraryId = computed(() => Number(route.params.id))
 const folderId = computed(() => (route.params.folderId ? Number(route.params.folderId) : null))
@@ -187,12 +189,12 @@ const canWrite = computed(() => permission.value === 'rw')
 const searchMode = computed(() => searchResults.value !== null)
 const rows = computed(() => searchResults.value ?? items.value)
 
-const columns = [
-  { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
-  { name: 'size', label: 'Size', field: 'size', align: 'right', sortable: true, style: 'width: 110px' },
-  { name: 'updated_at', label: 'Modified', field: 'updated_at', align: 'right', sortable: true, style: 'width: 160px' },
+const columns = computed(() => [
+  { name: 'name', label: t('common.name'), field: 'name', align: 'left', sortable: true },
+  { name: 'size', label: t('common.size'), field: 'size', align: 'right', sortable: true, style: 'width: 110px' },
+  { name: 'updated_at', label: t('common.modified'), field: 'updated_at', align: 'right', sortable: true, style: 'width: 160px' },
   { name: 'actions', label: '', field: 'id', align: 'right' },
-]
+])
 
 async function load() {
   loading.value = true
@@ -247,7 +249,7 @@ async function download(node) {
 }
 
 function newFolder() {
-  $q.dialog({ title: 'New folder', prompt: { model: '', type: 'text', label: 'Folder name', isValid: (v) => !!v.trim() }, cancel: true }).onOk(async (name) => {
+  $q.dialog({ title: t('browser.newFolder'), prompt: { model: '', type: 'text', label: t('browser.folderName'), isValid: (v) => !!v.trim() }, cancel: t('common.cancel'), ok: t('common.ok') }).onOk(async (name) => {
     try {
       await api.post(`/libraries/${libraryId.value}/folders`, { name, parent_id: folderId.value })
       load()
@@ -258,7 +260,7 @@ function newFolder() {
 }
 
 function rename(node) {
-  $q.dialog({ title: 'Rename', prompt: { model: node.name, type: 'text', isValid: (v) => !!v.trim() }, cancel: true }).onOk(async (name) => {
+  $q.dialog({ title: t('common.rename'), prompt: { model: node.name, type: 'text', isValid: (v) => !!v.trim() }, cancel: t('common.cancel'), ok: t('common.ok') }).onOk(async (name) => {
     try {
       await api.patch(`/nodes/${node.id}`, { name })
       load()
@@ -270,14 +272,14 @@ function rename(node) {
 
 function remove(nodes) {
   $q.dialog({
-    title: 'Move to trash',
-    message: nodes.length === 1 ? `Move "${nodes[0].name}" to trash?` : `Move ${nodes.length} items to trash?`,
-    cancel: true,
-    ok: { label: 'Delete', color: 'negative', unelevated: true },
+    title: t('browser.trashTitle'),
+    message: nodes.length === 1 ? t('browser.trashOne', { name: nodes[0].name }) : t('browser.trashMany', { n: nodes.length }),
+    cancel: t('common.cancel'),
+    ok: { label: t('common.delete'), color: 'negative', unelevated: true },
   }).onOk(async () => {
     try {
       await Promise.all(nodes.map((n) => api.delete(`/nodes/${n.id}`)))
-      $q.notify({ type: 'positive', message: 'Moved to trash', actions: [{ label: 'Trash', color: 'white', handler: () => router.push({ name: 'trash', params: { id: libraryId.value } }) }] })
+      $q.notify({ type: 'positive', message: t('browser.movedToTrash'), actions: [{ label: t('common.trash'), color: 'white', handler: () => router.push({ name: 'trash', params: { id: libraryId.value } }) }] })
       load()
       auth.fetchMe()
     } catch (e) {
@@ -289,11 +291,11 @@ function remove(nodes) {
 function moveCopy(nodes, action) {
   $q.dialog({
     component: FolderPickerDialog,
-    componentProps: { title: action === 'move' ? 'Move to…' : 'Copy to…', okLabel: action === 'move' ? 'Move here' : 'Copy here', initialLibraryId: libraryId.value, excludeId: nodes.length === 1 && nodes[0].type === 'folder' ? nodes[0].id : null },
+    componentProps: { title: action === 'move' ? t('browser.moveTo') : t('browser.copyTo'), okLabel: action === 'move' ? t('browser.moveHere') : t('browser.copyHere'), initialLibraryId: libraryId.value, excludeId: nodes.length === 1 && nodes[0].type === 'folder' ? nodes[0].id : null },
   }).onOk(async ({ library_id, parent_id }) => {
     try {
       await Promise.all(nodes.map((n) => api.post(`/nodes/${n.id}/${action}`, { target_library_id: library_id, target_parent_id: parent_id })))
-      $q.notify({ type: 'positive', message: action === 'move' ? 'Moved' : 'Copied' })
+      $q.notify({ type: 'positive', message: action === 'move' ? t('browser.moved') : t('browser.copied') })
       load()
       auth.fetchMe()
     } catch (e) {
@@ -331,11 +333,11 @@ function versions(node) {
 // ---- uploads ----
 function uploadFiles(files) {
   if (!files.length) return
-  if (!canWrite.value) return $q.notify({ type: 'warning', message: 'You do not have write permission here.' })
+  if (!canWrite.value) return $q.notify({ type: 'warning', message: t('browser.noWrite') })
   const max = auth.settings.max_upload_bytes
   const ok = [...files].filter((f) => {
     if (max && f.size > max) {
-      $q.notify({ type: 'negative', message: `${f.name} exceeds the ${formatBytes(max)} upload limit` })
+      $q.notify({ type: 'negative', message: t('browser.tooBig', { name: f.name, limit: formatBytes(max) }) })
       return false
     }
     return true

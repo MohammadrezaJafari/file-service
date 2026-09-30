@@ -28,3 +28,23 @@
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+// Persian-friendly font; applied when the UI language is RTL (fa-IR)
+@import '@fontsource/vazirmatn/400.css';
+@import '@fontsource/vazirmatn/500.css';
+@import '@fontsource/vazirmatn/700.css';
+
+html[lang='fa-IR'] body,
+html[lang='fa-IR'] .q-field__native,
+html[lang='fa-IR'] .q-btn,
+html[lang='fa-IR'] .q-item,
+html[lang='fa-IR'] .q-table {
+  font-family: 'Vazirmatn', 'Roboto', sans-serif;
+}
+
+// Keep latin file names / links readable in both directions
+.mono,
+.q-input input[type='email'] {
+  direction: ltr;
+  unicode-bidi: plaintext;
+}

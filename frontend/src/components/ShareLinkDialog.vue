@@ -2,15 +2,15 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide">
     <q-card style="min-width: 480px; max-width: 95vw">
       <q-card-section>
-        <div class="text-h6">{{ kind === 'upload' ? 'Upload link' : 'Share link' }}</div>
+        <div class="text-h6">{{ kind === 'upload' ? $t('link.uploadTitle') : $t('link.title') }}</div>
         <div class="text-caption text-grey-7 ellipsis">{{ node ? node.name : library.name }}</div>
       </q-card-section>
 
       <q-card-section v-if="!created" class="q-gutter-md">
-        <q-btn-toggle v-if="!node || node.type === 'folder'" v-model="kind" spread unelevated toggle-color="primary" :options="[{ label: 'Download link', value: 'download' }, { label: 'Upload link', value: 'upload' }]" />
-        <q-input v-model="password" outlined dense label="Password (optional)" type="password" hint="Min 4 characters" />
-        <q-input v-model.number="expires" outlined dense type="number" label="Expires in days (optional)" min="1" />
-        <q-toggle v-if="kind === 'download'" v-model="allowDownload" label="Allow download" />
+        <q-btn-toggle v-if="!node || node.type === 'folder'" v-model="kind" spread unelevated toggle-color="primary" :options="[{ label: $t('link.downloadLink'), value: 'download' }, { label: $t('link.uploadLink'), value: 'upload' }]" />
+        <q-input v-model="password" outlined dense :label="$t('link.passwordOpt')" type="password" :hint="$t('link.minPw')" />
+        <q-input v-model.number="expires" outlined dense type="number" :label="$t('link.expires')" min="1" />
+        <q-toggle v-if="kind === 'download'" v-model="allowDownload" :label="$t('link.allowDownload')" />
       </q-card-section>
 
       <q-card-section v-else class="q-gutter-sm">
@@ -20,21 +20,22 @@
           </template>
         </q-input>
         <div class="text-caption text-grey-7">
-          <span v-if="created.has_password">Password protected · </span>
-          <span v-if="created.expires_at">Expires {{ formatDate(created.expires_at) }}</span>
-          <span v-else>Never expires</span>
+          <span v-if="created.has_password">{{ $t('link.protected') }} · </span>
+          <span v-if="created.expires_at">{{ $t('link.expiresAt', { date: formatDate(created.expires_at) }) }}</span>
+          <span v-else>{{ $t('link.neverExpires') }}</span>
         </div>
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Close" @click="onDialogCancel" />
-        <q-btn v-if="!created" color="primary" unelevated label="Create link" :loading="loading" @click="create" />
+        <q-btn flat :label="$t('common.close')" @click="onDialogCancel" />
+        <q-btn v-if="!created" color="primary" unelevated :label="$t('link.createLink')" :loading="loading" @click="create" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { ref } from 'vue'
 import { useDialogPluginComponent, useQuasar, copyToClipboard } from 'quasar'
 import { api } from '@/boot/axios'
@@ -44,6 +45,7 @@ const props = defineProps({ library: { type: Object, required: true }, node: { t
 defineEmits([...useDialogPluginComponent.emits])
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
 const $q = useQuasar()
+const { t } = useI18n()
 
 const kind = ref('download')
 const password = ref('')
@@ -73,6 +75,6 @@ async function create() {
 }
 
 function copy(text) {
-  copyToClipboard(text).then(() => $q.notify({ type: 'positive', message: 'Link copied to clipboard' })).catch(() => {})
+  copyToClipboard(text).then(() => $q.notify({ type: 'positive', message: t('link.copied') })).catch(() => {})
 }
 </script>

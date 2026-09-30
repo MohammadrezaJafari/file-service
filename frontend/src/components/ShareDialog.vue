@@ -2,14 +2,14 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide">
     <q-card style="min-width: 520px; max-width: 95vw">
       <q-card-section>
-        <div class="text-h6">Share {{ node ? `folder "${node.name}"` : `library "${library.name}"` }}</div>
-        <div class="text-caption text-grey-7">Give other users or groups access to this {{ node ? 'folder' : 'library' }}.</div>
+        <div class="text-h6">{{ $t('share.title', { target: node ? $t('share.folderTarget', { name: node.name }) : $t('share.libraryTarget', { name: library.name }) }) }}</div>
+        <div class="text-caption text-grey-7">{{ $t('share.hint', { kind: node ? $t('common.folder') : $t('picker.library') }) }}</div>
       </q-card-section>
 
       <q-card-section>
         <q-tabs v-model="tab" dense align="left" class="text-grey-7" active-color="primary" indicator-color="primary">
-          <q-tab name="user" label="User" icon="person" />
-          <q-tab name="group" label="Group" icon="groups" />
+          <q-tab name="user" :label="$t('share.user')" icon="person" />
+          <q-tab name="group" :label="$t('share.group')" icon="groups" />
         </q-tabs>
         <q-separator />
         <div class="row q-col-gutter-sm q-mt-sm items-start">
@@ -20,7 +20,7 @@
               outlined
               dense
               use-input
-              label="Search user by name or email"
+              :label="$t('share.searchUser')"
               :options="userOptions"
               option-label="name"
               option-value="id"
@@ -35,28 +35,28 @@
                   </q-item-section>
                 </q-item>
               </template>
-              <template #no-option><q-item><q-item-section class="text-grey">Type at least 2 characters</q-item-section></q-item></template>
+              <template #no-option><q-item><q-item-section class="text-grey">{{ $t('share.typeMore') }}</q-item-section></q-item></template>
             </q-select>
-            <q-select v-else v-model="selectedGroup" outlined dense label="Group" :options="groups" option-label="name" option-value="id" />
+            <q-select v-else v-model="selectedGroup" outlined dense :label="$t('share.group')" :options="groups" option-label="name" option-value="id" />
           </div>
           <div class="col-4">
             <q-select v-model="permission" outlined dense :options="permOptions" emit-value map-options />
           </div>
           <div class="col-auto">
-            <q-btn color="primary" unelevated label="Share" :loading="saving" :disable="!(tab === 'user' ? selectedUser : selectedGroup)" @click="save" />
+            <q-btn color="primary" unelevated :label="$t('common.share')" :loading="saving" :disable="!(tab === 'user' ? selectedUser : selectedGroup)" @click="save" />
           </div>
         </div>
       </q-card-section>
 
       <q-separator />
       <q-card-section>
-        <div class="text-subtitle2 q-mb-sm">Currently shared with</div>
+        <div class="text-subtitle2 q-mb-sm">{{ $t('share.currently') }}</div>
         <q-list v-if="filteredShares.length" dense separator>
           <q-item v-for="s in filteredShares" :key="s.id">
             <q-item-section avatar><q-icon :name="s.group ? 'groups' : 'person'" /></q-item-section>
             <q-item-section>
               <q-item-label>{{ s.user?.name || s.group?.name }}</q-item-label>
-              <q-item-label caption>{{ s.user?.email || 'Group' }}<span v-if="!node && s.node"> · folder /{{ s.node.name }}</span></q-item-label>
+              <q-item-label caption>{{ s.user?.email || $t('share.group') }}<span v-if="!node && s.node"> · {{ $t('share.folderPrefix') }} /{{ s.node.name }}</span></q-item-label>
             </q-item-section>
             <q-item-section side>
               <q-select :model-value="s.permission" dense borderless :options="permOptions" emit-value map-options @update:model-value="(v) => updateShare(s, v)" />
@@ -66,17 +66,18 @@
             </q-item-section>
           </q-item>
         </q-list>
-        <div v-else class="text-grey-6 text-caption">Not shared with anyone yet.</div>
+        <div v-else class="text-grey-6 text-caption">{{ $t('share.none') }}</div>
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Close" @click="onDialogCancel" />
+        <q-btn flat :label="$t('common.close')" @click="onDialogCancel" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { ref, computed, onMounted } from 'vue'
 import { useDialogPluginComponent, useQuasar } from 'quasar'
 import { api } from '@/boot/axios'
@@ -86,6 +87,7 @@ const props = defineProps({ library: { type: Object, required: true }, node: { t
 defineEmits([...useDialogPluginComponent.emits])
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
 const $q = useQuasar()
+const { t } = useI18n()
 
 const tab = ref('user')
 const shares = ref([])
@@ -95,10 +97,10 @@ const selectedUser = ref(null)
 const selectedGroup = ref(null)
 const permission = ref('r')
 const saving = ref(false)
-const permOptions = [
-  { label: 'Read only', value: 'r' },
-  { label: 'Read / Write', value: 'rw' },
-]
+const permOptions = computed(() => [
+  { label: t('common.readOnly'), value: 'r' },
+  { label: t('common.readWrite'), value: 'rw' },
+])
 
 const filteredShares = computed(() => (props.node ? shares.value.filter((s) => s.node_id === props.node.id) : shares.value))
 
@@ -126,7 +128,7 @@ async function save() {
     selectedUser.value = null
     selectedGroup.value = null
     await load()
-    $q.notify({ type: 'positive', message: 'Shared' })
+    $q.notify({ type: 'positive', message: t('share.shared') })
   } catch (e) {
     $q.notify({ type: 'negative', message: errorMessage(e) })
   } finally {

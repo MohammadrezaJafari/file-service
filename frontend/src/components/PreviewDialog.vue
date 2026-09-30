@@ -5,7 +5,7 @@
         <q-icon :name="fileIcon(node)" />
         <div class="ellipsis q-ml-sm">{{ node.name }}</div>
         <q-space />
-        <q-btn v-if="url" flat dense icon="download" label="Download" @click="download" />
+        <q-btn v-if="url" flat dense icon="download" :label="$t('common.download')" @click="download" />
         <q-btn flat dense round icon="close" v-close-popup />
       </q-bar>
       <q-card-section class="col flex flex-center scroll">
@@ -17,7 +17,7 @@
         <pre v-else-if="kind === 'text'" class="bg-grey-9 q-pa-md rounded-borders full-width" style="white-space: pre-wrap; max-height: 85vh; overflow: auto">{{ text }}</pre>
         <div v-else class="text-center">
           <q-icon :name="fileIcon(node)" size="96px" />
-          <div class="q-mt-md">No preview available for this file type.</div>
+          <div class="q-mt-md">{{ $t('preview.none') }}</div>
         </div>
       </q-card-section>
     </q-card>

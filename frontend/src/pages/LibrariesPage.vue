@@ -1,17 +1,17 @@
 <template>
   <q-page padding>
     <div class="row items-center q-mb-md">
-      <div class="page-title">My Libraries</div>
+      <div class="page-title">{{ $t('libraries.title') }}</div>
       <q-space />
       <q-btn-toggle v-model="view" flat dense toggle-color="primary" :options="[{ icon: 'grid_view', value: 'grid' }, { icon: 'view_list', value: 'list' }]" class="q-mr-sm" />
-      <q-btn color="primary" icon="add" label="New library" unelevated @click="createLibrary" />
+      <q-btn color="primary" icon="add" :label="$t('libraries.new')" unelevated @click="createLibrary" />
     </div>
 
     <q-inner-loading :showing="loading" />
 
     <div v-if="!loading && libraries.length === 0" class="text-center text-grey-6 q-pa-xl">
       <q-icon name="inventory_2" size="64px" />
-      <div class="q-mt-md">You have no libraries yet. Create one to start uploading files.</div>
+      <div class="q-mt-md">{{ $t('libraries.empty') }}</div>
     </div>
 
     <div v-else-if="view === 'grid'" class="row q-col-gutter-md">
@@ -21,7 +21,7 @@
             <q-avatar :icon="lib.is_encrypted ? 'lock' : 'inventory_2'" color="blue-1" text-color="primary" />
             <div class="q-ml-md ellipsis">
               <div class="text-subtitle1 ellipsis">{{ lib.name }}</div>
-              <div class="text-caption text-grey-7">{{ formatBytes(lib.size_bytes) }} · {{ lib.file_count }} files</div>
+              <div class="text-caption text-grey-7">{{ formatBytes(lib.size_bytes) }} · {{ lib.file_count }} {{ $t('libraries.files') }}</div>
             </div>
             <q-space />
             <LibraryMenu :library="lib" @changed="load" />

@@ -1,57 +1,35 @@
 <template>
   <q-page padding>
-    <div class="page-title q-mb-md">Activity</div>
+    <div class="page-title q-mb-md">{{ $t('activity.title') }}</div>
     <q-timeline color="primary" layout="comfortable" side="right">
-      <q-timeline-entry v-for="a in activities" :key="a.id" :icon="iconFor(a.action)" :subtitle="`${a.user?.name || 'Anonymous'} · ${timeAgo(a.created_at)}`">
+      <q-timeline-entry v-for="a in activities" :key="a.id" :icon="iconFor(a.action)" :subtitle="`${a.user?.name || $t('common.anonymous')} · ${timeAgo(a.created_at)}`">
         <div><span class="text-weight-medium">{{ labelFor(a.action) }}</span> <span class="mono text-grey-8">{{ a.path }}</span></div>
-        <div class="text-caption text-grey-6">{{ a.library?.name }}<span v-if="a.details?.from"> · from {{ a.details.from }}</span></div>
+        <div class="text-caption text-grey-6">{{ a.library?.name }}<span v-if="a.details?.from"> · {{ $t('activity.from', { path: a.details.from }) }}</span></div>
       </q-timeline-entry>
     </q-timeline>
-    <div v-if="!activities.length && !loading" class="text-center text-grey-6 q-pa-xl">No activity yet.</div>
+    <div v-if="!activities.length && !loading" class="text-center text-grey-6 q-pa-xl">{{ $t('activity.empty') }}</div>
     <div class="text-center q-mt-md">
-      <q-btn v-if="nextPage" flat color="primary" label="Load more" :loading="loading" @click="load(nextPage)" />
+      <q-btn v-if="nextPage" flat color="primary" :label="$t('common.loadMore')" :loading="loading" @click="load(nextPage)" />
     </div>
   </q-page>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { ref, onMounted } from 'vue'
 import { api } from '@/boot/axios'
 import { timeAgo } from '@/utils/format'
+
+const { t, te } = useI18n()
 
 const activities = ref([])
 const loading = ref(false)
 const nextPage = ref(1)
 
-const labels = {
-  'library.create': 'Created library',
-  'library.update': 'Updated library',
-  'library.delete': 'Deleted library',
-  'folder.create': 'Created folder',
-  'folder.rename': 'Renamed folder',
-  'folder.move': 'Moved folder',
-  'folder.copy': 'Copied folder',
-  'folder.delete': 'Deleted folder',
-  'folder.restore': 'Restored folder',
-  'folder.purge': 'Permanently deleted folder',
-  'file.create': 'Uploaded file',
-  'file.update': 'Updated file',
-  'file.rename': 'Renamed file',
-  'file.move': 'Moved file',
-  'file.copy': 'Copied file',
-  'file.delete': 'Deleted file',
-  'file.restore': 'Restored file',
-  'file.purge': 'Permanently deleted file',
-  'file.download': 'Downloaded file',
-  'file.restore_version': 'Restored file version',
-  'share.create': 'Shared',
-  'share.delete': 'Removed share',
-  'link.create': 'Created share link',
-  'link.delete': 'Deleted share link',
-  'link.download': 'Downloaded via link',
-  'link.upload': 'Uploaded via link',
+const labelFor = (a) => {
+  const key = `activity.actions.${a.replace('.', '_')}`
+  return te(key) ? t(key) : a
 }
-const labelFor = (a) => labels[a] || a
 const iconFor = (a) => {
   if (a.startsWith('share') || a.startsWith('link')) return 'share'
   if (a.endsWith('delete') || a.endsWith('purge')) return 'delete'
