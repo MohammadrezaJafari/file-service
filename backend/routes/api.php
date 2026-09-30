@@ -17,6 +17,9 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
     Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:20,1');
 
+    // Signed, short-lived download URLs issued to authenticated users
+    Route::get('dl/{node}', [NodeController::class, 'signedDownload'])->middleware('signed')->name('nodes.signed-download');
+
     // Anonymous share link access
     Route::prefix('share/{token}')->middleware('throttle:120,1')->group(function () {
         Route::get('/', [PublicShareController::class, 'show']);
@@ -62,6 +65,7 @@ Route::prefix('v1')->group(function () {
         Route::post('nodes/{node}/copy', [NodeController::class, 'copy']);
         Route::delete('nodes/{node}', [NodeController::class, 'destroy']);
         Route::get('nodes/{node}/download', [NodeController::class, 'download']);
+        Route::get('nodes/{node}/download-url', [NodeController::class, 'downloadUrl']);
         Route::get('nodes/{node}/versions', [NodeController::class, 'versions']);
         Route::get('nodes/{node}/versions/{version}/download', [NodeController::class, 'downloadVersion']);
         Route::post('nodes/{node}/versions/{version}/restore', [NodeController::class, 'restoreVersion']);

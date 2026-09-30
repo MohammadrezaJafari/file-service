@@ -29,7 +29,7 @@ class AuthController extends Controller
         $user->forceFill(['last_login_at' => now()])->save();
         $token = $user->createToken($request->input('device_name', 'web'))->plainTextToken;
 
-        return response()->json(['token' => $token, 'user' => new UserResource($user)], 201);
+        return response()->json(['token' => $token, 'user' => UserResource::private($user)], 201);
     }
 
     public function login(Request $request)
@@ -53,7 +53,7 @@ class AuthController extends Controller
         $user->forceFill(['last_login_at' => now()])->save();
         $token = $user->createToken($data['device_name'] ?? 'web')->plainTextToken;
 
-        return response()->json(['token' => $token, 'user' => new UserResource($user)]);
+        return response()->json(['token' => $token, 'user' => UserResource::private($user)]);
     }
 
     public function logout(Request $request)

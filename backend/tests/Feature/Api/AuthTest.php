@@ -28,7 +28,7 @@ class AuthTest extends TestCase
         $user = User::factory()->create(['password' => 'secret123']);
 
         $login = $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'secret123']);
-        $login->assertOk();
+        $login->assertOk()->assertJsonPath('user.is_admin', false)->assertJsonPath('user.used_bytes', 0);
         $token = $login->json('token');
 
         $this->withToken($token)->getJson('/api/v1/auth/me')

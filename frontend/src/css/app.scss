@@ -1,1 +1,30 @@
-// app global css
+// app global css in SCSS form
+
+.file-row {
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background: rgba(25, 118, 210, 0.06);
+  }
+}
+
+.drop-zone {
+  outline: 2px dashed transparent;
+  outline-offset: -8px;
+  transition: outline-color 0.2s, background-color 0.2s;
+
+  &.is-dragging {
+    outline-color: $primary;
+    background: rgba(25, 118, 210, 0.04);
+  }
+}
+
+.page-title {
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}

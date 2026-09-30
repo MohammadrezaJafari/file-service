@@ -7,9 +7,13 @@
     <meta name="description" content="<%= productDescription %>">
     <meta name="format-detection" content="telephone=no">
     <meta name="viewport" content="width=device-width, initial-scale=1<% if (ctx.mode.cordova || ctx.mode.capacitor) { %>, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover<% } %>">
+    <%
+      // The API lives on another origin, so allow XHR, previews (images, video, PDF) and fonts from it.
+      const apiOrigin = new URL(process.env.API_URL || 'http://localhost:8000/api/v1').origin
+    %>
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';<% if (ctx.dev) { %> connect-src 'self' ws://localhost:*; worker-src 'self' blob:;<% } %>"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: <%= apiOrigin %>; media-src 'self' blob: <%= apiOrigin %>; frame-src 'self' <%= apiOrigin %>; connect-src 'self' <%= apiOrigin %><% if (ctx.dev) { %> ws://localhost:*<% } %>; worker-src 'self' blob:;"
     />
 
     <link rel="icon" type="image/png" sizes="128x128" href="icons/favicon-128x128.png">

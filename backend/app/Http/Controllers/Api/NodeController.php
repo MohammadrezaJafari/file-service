@@ -14,6 +14,7 @@ use App\Services\BlobStorage;
 use App\Services\NodeService;
 use App\Support\Permission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use ZipArchive;
 
@@ -145,6 +146,31 @@ class NodeController extends Controller
         }
 
         $this->activity->log('file.download', $request->user(), $node->library, $node);
+
+        return $this->streamFile($node->storage_path, $node->name, $node->mime_type, $request->boolean('inline'));
+    }
+
+    /**
+     * Issue a short-lived signed URL so browsers can download/preview without the bearer token.
+     */
+    public function downloadUrl(Request $request, Node $node)
+    {
+        $this->authorize('view', $node);
+
+        $url = URL::temporarySignedRoute('nodes.signed-download', now()->addMinutes(30), [
+            'node' => $node->id,
+            'inline' => $request->boolean('inline') ? 1 : 0,
+            'v' => $node->version_number,
+        ]);
+
+        return response()->json(['url' => $url]);
+    }
+
+    public function signedDownload(Request $request, Node $node)
+    {
+        if ($node->isFolder()) {
+            return $this->downloadFolder($node);
+        }
 
         return $this->streamFile($node->storage_path, $node->name, $node->mime_type, $request->boolean('inline'));
     }

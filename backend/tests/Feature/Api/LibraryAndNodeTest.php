@@ -86,6 +86,18 @@ class LibraryAndNodeTest extends TestCase
         $this->get("/api/v1/nodes/{$node['id']}/download")->assertOk()->assertStreamedContent('v1');
     }
 
+    public function test_signed_download_url(): void
+    {
+        $library = Library::factory()->create(['owner_id' => $this->user->id]);
+        $node = $this->post("/api/v1/libraries/{$library->id}/upload", ['file' => UploadedFile::fake()->createWithContent('s.txt', 'signed')])->json();
+
+        $url = $this->getJson("/api/v1/nodes/{$node['id']}/download-url?inline=1")->assertOk()->json('url');
+
+        app('auth')->forgetGuards();
+        $this->get($url)->assertOk()->assertStreamedContent('signed')->assertHeader('Content-Disposition', 'inline; filename=s.txt');
+        $this->get(preg_replace('/signature=\w+/', 'signature=bad', $url))->assertForbidden();
+    }
+
     public function test_upload_without_replace_makes_unique_name(): void
     {
         $library = Library::factory()->create(['owner_id' => $this->user->id]);

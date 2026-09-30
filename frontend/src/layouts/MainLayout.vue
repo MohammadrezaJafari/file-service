@@ -1,42 +1,65 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+    <q-header elevated class="bg-primary text-white">
       <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
-
-        <q-toolbar-title>
-          Quasar App
+        <q-btn flat dense round icon="menu" aria-label="Menu" @click="drawerOpen = !drawerOpen" />
+        <q-toolbar-title class="cursor-pointer" @click="$router.push({ name: 'libraries' })">
+          <q-icon name="cloud" size="sm" class="q-mr-sm" />{{ auth.settings.site_name }}
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <q-btn flat round dense icon="account_circle">
+          <q-menu>
+            <q-list style="min-width: 220px">
+              <q-item>
+                <q-item-section>
+                  <q-item-label>{{ auth.user?.name }}</q-item-label>
+                  <q-item-label caption>{{ auth.user?.email }}</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-separator />
+              <q-item clickable v-close-popup :to="{ name: 'profile' }">
+                <q-item-section avatar><q-icon name="person" /></q-item-section>
+                <q-item-section>Profile & settings</q-item-section>
+              </q-item>
+              <q-item v-if="auth.user?.is_admin" clickable v-close-popup :href="adminUrl" target="_blank">
+                <q-item-section avatar><q-icon name="admin_panel_settings" /></q-item-section>
+                <q-item-section>Admin panel</q-item-section>
+              </q-item>
+              <q-item clickable v-close-popup @click="logout">
+                <q-item-section avatar><q-icon name="logout" /></q-item-section>
+                <q-item-section>Sign out</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
       </q-toolbar>
     </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      bordered
-    >
-      <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
-        </q-item-label>
+    <q-drawer v-model="drawerOpen" show-if-above bordered :width="250">
+      <q-list padding>
+        <q-item-label header>Files</q-item-label>
+        <q-item v-for="link in fileLinks" :key="link.name" clickable :to="{ name: link.name }" active-class="text-primary bg-blue-1">
+          <q-item-section avatar><q-icon :name="link.icon" /></q-item-section>
+          <q-item-section>{{ link.label }}</q-item-section>
+        </q-item>
 
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.label"
-          v-bind="link"
-        />
+        <q-separator spaced />
+        <q-item-label header>Collaboration</q-item-label>
+        <q-item v-for="link in collabLinks" :key="link.name" clickable :to="{ name: link.name }" active-class="text-primary bg-blue-1">
+          <q-item-section avatar><q-icon :name="link.icon" /></q-item-section>
+          <q-item-section>{{ link.label }}</q-item-section>
+        </q-item>
       </q-list>
+
+      <div class="absolute-bottom q-pa-md">
+        <div class="text-caption text-grey-7 q-mb-xs">
+          <q-icon name="storage" size="xs" class="q-mr-xs" />
+          {{ formatBytes(auth.user?.used_bytes) }}
+          <span v-if="auth.user?.quota_bytes"> of {{ formatBytes(auth.user.quota_bytes) }}</span>
+          <span v-else> used</span>
+        </div>
+        <q-linear-progress v-if="auth.user?.quota_bytes" :value="auth.usagePercent / 100" :color="auth.usagePercent > 90 ? 'negative' : 'primary'" rounded size="6px" />
+      </div>
     </q-drawer>
 
     <q-page-container>
@@ -46,57 +69,30 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import EssentialLink from '@/components/EssentialLink.vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { formatBytes } from '@/utils/format'
 
-const linksList = [
-  {
-    label: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    label: 'GitHub',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    label: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    label: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    label: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    label: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    label: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
+const auth = useAuthStore()
+const router = useRouter()
+const drawerOpen = ref(false)
+
+const fileLinks = [
+  { name: 'libraries', label: 'My Libraries', icon: 'inventory_2' },
+  { name: 'shared', label: 'Shared with me', icon: 'folder_shared' },
+  { name: 'starred', label: 'Starred', icon: 'star' },
+  { name: 'links', label: 'Share links', icon: 'link' },
+]
+const collabLinks = [
+  { name: 'groups', label: 'Groups', icon: 'groups' },
+  { name: 'activities', label: 'Activity', icon: 'history' },
 ]
 
-const leftDrawerOpen = ref(false)
+const adminUrl = computed(() => import.meta.env.API_URL.replace(/\/api\/v1\/?$/, '') + '/admin')
 
-function toggleLeftDrawer () {
-  leftDrawerOpen.value = !leftDrawerOpen.value
+async function logout() {
+  await auth.logout()
+  router.push({ name: 'login' })
 }
 </script>
