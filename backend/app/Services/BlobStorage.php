@@ -46,6 +46,24 @@ class BlobStorage
         return ['path' => $path, 'hash' => $hash, 'size' => strlen($contents)];
     }
 
+    /**
+     * Store an arbitrary local file (used for encrypted uploads).
+     *
+     * @return array{path: string, hash: string, size: int}
+     */
+    public function putLocalFile(string $localPath): array
+    {
+        $hash = hash_file('sha256', $localPath);
+        $path = $this->pathForHash($hash);
+        if (! $this->disk()->exists($path)) {
+            $stream = fopen($localPath, 'rb');
+            $this->disk()->writeStream($path, $stream);
+            fclose($stream);
+        }
+
+        return ['path' => $path, 'hash' => $hash, 'size' => filesize($localPath)];
+    }
+
     public function pathForHash(string $hash): string
     {
         return 'blobs/'.substr($hash, 0, 2).'/'.substr($hash, 2, 2).'/'.$hash;

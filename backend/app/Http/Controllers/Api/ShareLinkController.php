@@ -42,6 +42,7 @@ class ShareLinkController extends Controller
         ]);
 
         $library = Library::findOrFail($data['library_id']);
+        abort_if($library->is_encrypted, 422, 'Encrypted libraries cannot be shared with public links.');
         $node = null;
         if (! empty($data['node_id'])) {
             $node = Node::where('library_id', $library->id)->findOrFail($data['node_id']);

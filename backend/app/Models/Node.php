@@ -20,7 +20,7 @@ class Node extends Model
 
     protected $fillable = [
         'library_id', 'parent_id', 'type', 'name', 'size', 'mime_type', 'storage_path', 'hash',
-        'version_number', 'created_by', 'updated_by', 'deleted_by', 'deleted_from_path',
+        'is_encrypted', 'version_number', 'metadata', 'created_by', 'updated_by', 'deleted_by', 'deleted_from_path',
     ];
 
     protected $hidden = ['storage_path'];
@@ -30,6 +30,8 @@ class Node extends Model
         return [
             'size' => 'integer',
             'version_number' => 'integer',
+            'is_encrypted' => 'boolean',
+            'metadata' => 'array',
         ];
     }
 
@@ -71,6 +73,11 @@ class Node extends Model
     public function shareLinks(): HasMany
     {
         return $this->hasMany(ShareLink::class);
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class, 'node_tag');
     }
 
     public function isFolder(): bool

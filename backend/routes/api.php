@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PublicShareController;
 use App\Http\Controllers\Api\ShareController;
 use App\Http\Controllers\Api\ShareLinkController;
 use App\Http\Controllers\Api\StarController;
+use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,6 +54,17 @@ Route::prefix('v1')->group(function () {
         Route::post('libraries/{library}/folders', [NodeController::class, 'storeFolder']);
         Route::post('libraries/{library}/upload', [NodeController::class, 'upload']);
         Route::get('libraries/{library}/search', [NodeController::class, 'search']);
+        Route::post('libraries/{library}/files', [NodeController::class, 'storeFile']);
+        Route::get('libraries/{library}/stats', [LibraryController::class, 'stats']);
+        Route::put('libraries/{library}/properties', [LibraryController::class, 'updateProperties']);
+        Route::post('libraries/{library}/unlock', [LibraryController::class, 'unlock'])->middleware('throttle:10,1');
+        Route::post('libraries/{library}/lock', [LibraryController::class, 'lock']);
+        Route::put('libraries/{library}/password', [LibraryController::class, 'changePassword']);
+
+        Route::get('libraries/{library}/tags', [TagController::class, 'index']);
+        Route::post('libraries/{library}/tags', [TagController::class, 'store']);
+        Route::put('tags/{tag}', [TagController::class, 'update']);
+        Route::delete('tags/{tag}', [TagController::class, 'destroy']);
 
         Route::get('libraries/{library}/shares', [ShareController::class, 'index']);
         Route::post('libraries/{library}/shares', [ShareController::class, 'store']);
@@ -66,6 +78,10 @@ Route::prefix('v1')->group(function () {
         Route::delete('nodes/{node}', [NodeController::class, 'destroy']);
         Route::get('nodes/{node}/download', [NodeController::class, 'download']);
         Route::get('nodes/{node}/download-url', [NodeController::class, 'downloadUrl']);
+        Route::get('nodes/{node}/thumbnail', [NodeController::class, 'thumbnail']);
+        Route::get('nodes/{node}/content', [NodeController::class, 'content']);
+        Route::put('nodes/{node}/content', [NodeController::class, 'updateContent']);
+        Route::patch('nodes/{node}/metadata', [NodeController::class, 'updateMetadata']);
         Route::get('nodes/{node}/versions', [NodeController::class, 'versions']);
         Route::get('nodes/{node}/versions/{version}/download', [NodeController::class, 'downloadVersion']);
         Route::post('nodes/{node}/versions/{version}/restore', [NodeController::class, 'restoreVersion']);

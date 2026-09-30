@@ -9,9 +9,13 @@ use App\Http\Resources\NodeResource;
 use App\Models\FileVersion;
 use App\Models\Library;
 use App\Models\Node;
+use App\Models\Tag;
+use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\BlobStorage;
+use App\Services\LibraryCrypto;
 use App\Services\NodeService;
+use App\Services\ThumbnailService;
 use App\Support\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -24,6 +28,8 @@ class NodeController extends Controller
         protected NodeService $nodes,
         protected BlobStorage $blobs,
         protected ActivityLogger $activity,
+        protected LibraryCrypto $crypto,
+        protected ThumbnailService $thumbs,
     ) {}
 
     /**
@@ -40,7 +46,8 @@ class NodeController extends Controller
         $children = Node::query()
             ->where('library_id', $library->id)
             ->where('parent_id', $parent?->id)
-            ->with(['updater'])
+            ->when($request->query('tag_id'), fn ($q, $tagId) => $q->whereHas('tags', fn ($t) => $t->where('tags.id', $tagId)))
+            ->with(['updater', 'tags'])
             ->orderByRaw("case when type = 'folder' then 0 else 1 end")
             ->orderBy('name')
             ->get()
@@ -53,6 +60,9 @@ class NodeController extends Controller
             'folder' => $parent ? new NodeResource($parent) : null,
             'breadcrumbs' => $breadcrumbs,
             'permission' => $parent ? Permission::forNode($user, $parent) : Permission::forLibrary($user, $library),
+            'is_unlocked' => $this->crypto->isUnlocked($library, $user),
+            'tags' => $library->tags()->orderBy('name')->get(),
+            'property_definitions' => $library->property_definitions ?? [],
             'items' => NodeResource::collection($children),
         ]);
     }
@@ -63,7 +73,78 @@ class NodeController extends Controller
         $node->resolved_path = $node->path();
         $node->is_starred = $request->user()->stars()->where('nodes.id', $node->id)->exists();
 
-        return new NodeResource($node->load(['creator', 'updater', 'library.owner']));
+        return new NodeResource($node->load(['creator', 'updater', 'library.owner', 'tags']));
+    }
+
+    public function updateMetadata(Request $request, Node $node)
+    {
+        $this->authorize('write', $node);
+        $data = $request->validate([
+            'metadata' => ['nullable', 'array'],
+            'tag_ids' => ['nullable', 'array'],
+            'tag_ids.*' => ['integer'],
+        ]);
+
+        if (array_key_exists('metadata', $data)) {
+            $node->metadata = array_filter($data['metadata'] ?? [], fn ($v) => $v !== null && $v !== '');
+            $node->save();
+        }
+        if (array_key_exists('tag_ids', $data)) {
+            $valid = Tag::where('library_id', $node->library_id)->whereIn('id', $data['tag_ids'] ?? [])->pluck('id');
+            $node->tags()->sync($valid);
+        }
+        $this->activity->log('file.metadata', $request->user(), $node->library, $node);
+
+        return new NodeResource($node->fresh()->load('tags'));
+    }
+
+    /** Return the text content of a file (for the Markdown / whiteboard editors). */
+    public function content(Request $request, Node $node)
+    {
+        $this->authorize('view', $node);
+        abort_unless($node->isFile(), 400);
+        abort_if($node->size > 5 * 1024 * 1024, 413, 'File too large to edit online.');
+        $stream = $this->blobs->readStream($node->storage_path);
+        abort_unless($stream, 404);
+        $text = $node->is_encrypted
+            ? $this->crypto->decryptToString($stream, $this->crypto->keyFor($node->library, $request->user()))
+            : stream_get_contents($stream);
+        fclose($stream);
+
+        return response($text, 200, ['Content-Type' => 'text/plain; charset=utf-8', 'X-Version' => $node->version_number]);
+    }
+
+    public function updateContent(Request $request, Node $node)
+    {
+        $this->authorize('write', $node);
+        $data = $request->validate(['content' => ['present', 'string']]);
+
+        return new NodeResource($this->nodes->updateContent($node, $data['content'], $request->user()));
+    }
+
+    public function storeFile(Request $request, Library $library)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'parent_id' => ['nullable', 'integer'],
+            'content' => ['nullable', 'string'],
+            'mime_type' => ['nullable', 'string', 'max:100'],
+        ]);
+        $parent = $this->resolveParent($request, $library);
+        $this->authorize('write', $parent ?? $library);
+
+        $node = $this->nodes->createFile($library, $parent, $data['name'], $data['content'] ?? '', $request->user(), $data['mime_type'] ?? null);
+
+        return (new NodeResource($node))->response()->setStatusCode(201);
+    }
+
+    public function thumbnail(Request $request, Node $node)
+    {
+        $this->authorize('view', $node);
+        $jpeg = $this->thumbs->get($node, $request->user(), (int) $request->query('size', 256));
+        abort_unless($jpeg, 404);
+
+        return response($jpeg, 200, ['Content-Type' => 'image/jpeg', 'Cache-Control' => 'private, max-age=3600']);
     }
 
     public function storeFolder(Request $request, Library $library)
@@ -142,12 +223,12 @@ class NodeController extends Controller
         $this->authorize('view', $node);
 
         if ($node->isFolder()) {
-            return $this->downloadFolder($node);
+            return $this->downloadFolder($node, $request->user());
         }
 
         $this->activity->log('file.download', $request->user(), $node->library, $node);
 
-        return $this->streamFile($node->storage_path, $node->name, $node->mime_type, $request->boolean('inline'));
+        return $this->streamFile($node->storage_path, $node->name, $node->mime_type, $request->boolean('inline'), $node->is_encrypted ? $this->crypto->keyFor($node->library, $request->user()) : null);
     }
 
     /**
@@ -160,7 +241,9 @@ class NodeController extends Controller
         $url = URL::temporarySignedRoute('nodes.signed-download', now()->addMinutes(30), [
             'node' => $node->id,
             'inline' => $request->boolean('inline') ? 1 : 0,
+            'thumb' => $request->boolean('thumb') ? 1 : 0,
             'v' => $node->version_number,
+            'u' => $request->user()->id,
         ]);
 
         return response()->json(['url' => $url]);
@@ -168,11 +251,18 @@ class NodeController extends Controller
 
     public function signedDownload(Request $request, Node $node)
     {
+        $user = User::find($request->query('u'));
+        if ($request->boolean('thumb')) {
+            $jpeg = $this->thumbs->get($node, $user);
+            abort_unless($jpeg, 404);
+
+            return response($jpeg, 200, ['Content-Type' => 'image/jpeg', 'Cache-Control' => 'private, max-age=3600']);
+        }
         if ($node->isFolder()) {
-            return $this->downloadFolder($node);
+            return $this->downloadFolder($node, $user);
         }
 
-        return $this->streamFile($node->storage_path, $node->name, $node->mime_type, $request->boolean('inline'));
+        return $this->streamFile($node->storage_path, $node->name, $node->mime_type, $request->boolean('inline'), $node->is_encrypted ? $this->crypto->keyFor($node->library, $user) : null);
     }
 
     public function versions(Node $node)
@@ -188,7 +278,7 @@ class NodeController extends Controller
         $this->authorize('view', $node);
         abort_unless($version->node_id === $node->id, 404);
 
-        return $this->streamFile($version->storage_path, $node->name, $version->mime_type);
+        return $this->streamFile($version->storage_path, $node->name, $version->mime_type, false, $version->is_encrypted ? $this->crypto->keyFor($node->library, $request->user()) : null);
     }
 
     public function restoreVersion(Request $request, Node $node, FileVersion $version)
@@ -242,23 +332,37 @@ class NodeController extends Controller
         return [$library, $parent];
     }
 
-    protected function streamFile(?string $path, string $name, ?string $mime, bool $inline = false): StreamedResponse
+    protected function streamFile(?string $path, string $name, ?string $mime, bool $inline = false, ?string $key = null): StreamedResponse
     {
         abort_if(! $path || ! $this->blobs->exists($path), 404, 'File content not found.');
 
         $disposition = $inline ? 'inline' : 'attachment';
 
-        return $this->blobs->disk()->response($path, $name, [
+        if ($key === null) {
+            return $this->blobs->disk()->response($path, $name, [
+                'Content-Type' => $mime ?: 'application/octet-stream',
+            ], $disposition);
+        }
+
+        $ascii = preg_replace('/[^\x20-\x7e]/', '_', $name);
+
+        return response()->stream(function () use ($path, $key) {
+            $stream = $this->blobs->readStream($path);
+            $this->crypto->decryptStreamToOutput($stream, $key);
+            fclose($stream);
+        }, 200, [
             'Content-Type' => $mime ?: 'application/octet-stream',
-        ], $disposition);
+            'Content-Disposition' => $disposition.'; filename="'.$ascii.'"; filename*=UTF-8\'\''.rawurlencode($name),
+        ]);
     }
 
-    protected function downloadFolder(Node $folder): StreamedResponse
+    protected function downloadFolder(Node $folder, ?User $user = null): StreamedResponse
     {
+        $key = $folder->library->is_encrypted ? $this->crypto->keyFor($folder->library, $user) : null;
         $tmp = tempnam(sys_get_temp_dir(), 'fsz');
         $zip = new ZipArchive;
         $zip->open($tmp, ZipArchive::OVERWRITE);
-        $this->addFolderToZip($zip, $folder, '');
+        $this->addFolderToZip($zip, $folder, '', $key);
         $zip->close();
 
         return response()->streamDownload(function () use ($tmp) {
@@ -271,16 +375,22 @@ class NodeController extends Controller
         }, $folder->name.'.zip', ['Content-Type' => 'application/zip']);
     }
 
-    protected function addFolderToZip(ZipArchive $zip, Node $folder, string $prefix): void
+    protected function addFolderToZip(ZipArchive $zip, Node $folder, string $prefix, ?string $key = null): void
     {
         $zip->addEmptyDir($prefix === '' ? $folder->name : $prefix);
         $base = $prefix === '' ? $folder->name : $prefix;
 
         foreach ($folder->children as $child) {
             if ($child->isFolder()) {
-                $this->addFolderToZip($zip, $child, $base.'/'.$child->name);
+                $this->addFolderToZip($zip, $child, $base.'/'.$child->name, $key);
             } elseif ($child->storage_path && ($abs = $this->blobs->absolutePath($child->storage_path)) && is_file($abs)) {
-                $zip->addFile($abs, $base.'/'.$child->name);
+                if ($child->is_encrypted && $key) {
+                    $stream = fopen($abs, 'rb');
+                    $zip->addFromString($base.'/'.$child->name, $this->crypto->decryptToString($stream, $key));
+                    fclose($stream);
+                } else {
+                    $zip->addFile($abs, $base.'/'.$child->name);
+                }
             }
         }
     }

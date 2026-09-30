@@ -16,6 +16,7 @@ class NodeService
     public function __construct(
         protected BlobStorage $blobs,
         protected ActivityLogger $activity,
+        protected LibraryCrypto $crypto,
     ) {}
 
     public function createFolder(Library $library, ?Node $parent, string $name, User $user): Node
@@ -72,9 +73,88 @@ class NodeService
             throw ValidationException::withMessages(['file' => 'Storage quota exceeded.']);
         }
 
-        $stored = $this->blobs->putUploadedFile($file);
         $mime = $file->getMimeType() ?: $file->getClientMimeType();
+        $plainSize = $file->getSize();
+        $plainHash = hash_file('sha256', $file->getRealPath());
+        if ($library->is_encrypted) {
+            $key = $this->crypto->keyFor($library, $user);
+            $tmp = $this->crypto->encryptFile($file->getRealPath(), $key);
+            $stored = $this->blobs->putLocalFile($tmp);
+            @unlink($tmp);
+            sodium_memzero($key);
+        } else {
+            $stored = $this->blobs->putUploadedFile($file);
+        }
+        $stored['size'] = $plainSize;
+        $stored['hash'] = $plainHash;
 
+        return $this->storeVersion($library, $parent, $name, $user, $existing, $stored, $mime, $delta, $owner);
+    }
+
+    /**
+     * Write a new version of a text-like file from a string (used by the editors).
+     */
+    public function updateContent(Node $node, string $contents, User $user, ?string $mime = null): Node
+    {
+        abort_unless($node->isFile(), 422, 'Not a file.');
+        $library = $node->library;
+        $delta = strlen($contents) - $node->size;
+        if ($delta > 0 && ! $library->owner->hasSpaceFor($delta)) {
+            throw ValidationException::withMessages(['file' => 'Storage quota exceeded.']);
+        }
+        $plainHash = hash('sha256', $contents);
+        if ($library->is_encrypted) {
+            $key = $this->crypto->keyFor($library, $user);
+            $tmpIn = tempnam(sys_get_temp_dir(), 'pl');
+            file_put_contents($tmpIn, $contents);
+            $tmp = $this->crypto->encryptFile($tmpIn, $key);
+            @unlink($tmpIn);
+            $stored = $this->blobs->putLocalFile($tmp);
+            @unlink($tmp);
+            sodium_memzero($key);
+        } else {
+            $stored = $this->blobs->putContents($contents);
+        }
+        $stored['size'] = strlen($contents);
+        $stored['hash'] = $plainHash;
+
+        return $this->storeVersion($library, $node->parent, $node->name, $user, $node, $stored, $mime ?: $node->mime_type, $delta, $library->owner);
+    }
+
+    /**
+     * Create a brand new (possibly empty) file from a string, e.g. a wiki page or a whiteboard.
+     */
+    public function createFile(Library $library, ?Node $parent, string $name, string $contents, User $user, ?string $mime = null): Node
+    {
+        $this->assertParent($library, $parent);
+        $name = $this->sanitizeName($name);
+        $this->assertNameAvailable($library, $parent, $name);
+        $placeholder = new Node(['library_id' => $library->id, 'parent_id' => $parent?->id, 'type' => Node::TYPE_FILE, 'name' => $name, 'size' => 0]);
+        $placeholder->setRelation('library', $library);
+        $placeholder->setRelation('parent', $parent);
+        $mime = $mime ?: (str_ends_with(strtolower($name), '.md') ? 'text/markdown' : 'application/octet-stream');
+
+        $plainHash = hash('sha256', $contents);
+        if ($library->is_encrypted) {
+            $key = $this->crypto->keyFor($library, $user);
+            $tmpIn = tempnam(sys_get_temp_dir(), 'pl');
+            file_put_contents($tmpIn, $contents);
+            $tmp = $this->crypto->encryptFile($tmpIn, $key);
+            @unlink($tmpIn);
+            $stored = $this->blobs->putLocalFile($tmp);
+            @unlink($tmp);
+            sodium_memzero($key);
+        } else {
+            $stored = $this->blobs->putContents($contents);
+        }
+        $stored['size'] = strlen($contents);
+        $stored['hash'] = $plainHash;
+
+        return $this->storeVersion($library, $parent, $name, $user, null, $stored, $mime, strlen($contents), $library->owner);
+    }
+
+    protected function storeVersion(Library $library, ?Node $parent, string $name, User $user, ?Node $existing, array $stored, ?string $mime, int $delta, User $owner): Node
+    {
         return DB::transaction(function () use ($library, $parent, $name, $user, $existing, $stored, $mime, $delta, $owner) {
             if ($existing) {
                 $node = $existing;
@@ -83,6 +163,7 @@ class NodeService
                     'mime_type' => $mime,
                     'storage_path' => $stored['path'],
                     'hash' => $stored['hash'],
+                    'is_encrypted' => $library->is_encrypted,
                     'version_number' => $node->version_number + 1,
                     'updated_by' => $user->id,
                 ])->save();
@@ -97,6 +178,7 @@ class NodeService
                     'mime_type' => $mime,
                     'storage_path' => $stored['path'],
                     'hash' => $stored['hash'],
+                    'is_encrypted' => $library->is_encrypted,
                     'version_number' => 1,
                     'created_by' => $user->id,
                     'updated_by' => $user->id,
@@ -112,6 +194,7 @@ class NodeService
                 'size' => $stored['size'],
                 'mime_type' => $mime,
                 'hash' => $stored['hash'],
+                'is_encrypted' => $library->is_encrypted,
                 'created_by' => $user->id,
                 'created_at' => now(),
             ]);
@@ -149,6 +232,9 @@ class NodeService
 
         return DB::transaction(function () use ($node, $targetLibrary, $targetParent, $user, $sameLibrary, $oldPath, $name) {
             if (! $sameLibrary) {
+                if ($node->library->is_encrypted !== $targetLibrary->is_encrypted) {
+                    throw ValidationException::withMessages(['target' => 'Cannot move between encrypted and unencrypted libraries.']);
+                }
                 $size = $this->subtreeSize($node);
                 $count = $this->subtreeFileCount($node);
                 $oldLibrary = $node->library;
@@ -182,6 +268,9 @@ class NodeService
         $this->assertParent($targetLibrary, $targetParent);
         $this->assertNotIntoSelf($node, $targetParent);
 
+        if ($node->library_id !== $targetLibrary->id && $node->library->is_encrypted !== $targetLibrary->is_encrypted) {
+            throw ValidationException::withMessages(['target' => 'Cannot copy between encrypted and unencrypted libraries.']);
+        }
         $size = $this->subtreeSize($node);
         if (! $targetLibrary->owner->hasSpaceFor($size)) {
             throw ValidationException::withMessages(['target' => 'Storage quota exceeded on target library.']);
@@ -273,6 +362,7 @@ class NodeService
                 'mime_type' => $version->mime_type,
                 'storage_path' => $version->storage_path,
                 'hash' => $version->hash,
+                'is_encrypted' => $version->is_encrypted,
                 'version_number' => $node->version_number + 1,
                 'updated_by' => $user->id,
             ])->save();
@@ -284,6 +374,7 @@ class NodeService
                 'size' => $version->size,
                 'mime_type' => $version->mime_type,
                 'hash' => $version->hash,
+                'is_encrypted' => $version->is_encrypted,
                 'created_by' => $user->id,
                 'comment' => "Restored from version {$version->version_number}",
                 'created_at' => now(),
@@ -445,6 +536,8 @@ class NodeService
             'mime_type' => $source->mime_type,
             'storage_path' => $source->storage_path,
             'hash' => $source->hash,
+            'is_encrypted' => $source->is_encrypted,
+            'metadata' => $source->metadata,
             'version_number' => $source->isFile() ? 1 : 0,
             'created_by' => $user->id,
             'updated_by' => $user->id,
@@ -458,6 +551,7 @@ class NodeService
                 'size' => $source->size,
                 'mime_type' => $source->mime_type,
                 'hash' => $source->hash,
+                'is_encrypted' => $source->is_encrypted,
                 'created_by' => $user->id,
                 'created_at' => now(),
             ]);

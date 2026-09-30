@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\LibraryCrypto;
 use App\Support\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -17,6 +18,8 @@ class LibraryResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'is_encrypted' => $this->is_encrypted,
+            'is_unlocked' => $user ? app(LibraryCrypto::class)->isUnlocked($this->resource, $user) : false,
+            'property_definitions' => $this->property_definitions ?? [],
             'size_bytes' => $this->size_bytes,
             'file_count' => $this->file_count,
             'owner' => new UserResource($this->whenLoaded('owner')),

@@ -13,10 +13,10 @@ class Library extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'owner_id', 'name', 'description', 'is_encrypted', 'password_hash', 'size_bytes', 'file_count',
+        'owner_id', 'name', 'description', 'is_encrypted', 'password_hash', 'encrypted_key', 'key_salt', 'size_bytes', 'file_count', 'property_definitions',
     ];
 
-    protected $hidden = ['password_hash'];
+    protected $hidden = ['password_hash', 'encrypted_key', 'key_salt'];
 
     protected function casts(): array
     {
@@ -24,6 +24,7 @@ class Library extends Model
             'is_encrypted' => 'boolean',
             'size_bytes' => 'integer',
             'file_count' => 'integer',
+            'property_definitions' => 'array',
         ];
     }
 
@@ -50,6 +51,11 @@ class Library extends Model
     public function shareLinks(): HasMany
     {
         return $this->hasMany(ShareLink::class);
+    }
+
+    public function tags(): HasMany
+    {
+        return $this->hasMany(Tag::class);
     }
 
     public function activities(): HasMany

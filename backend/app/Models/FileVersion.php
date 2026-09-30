@@ -10,7 +10,7 @@ class FileVersion extends Model
     public const UPDATED_AT = null;
 
     protected $fillable = [
-        'node_id', 'version_number', 'storage_path', 'size', 'mime_type', 'hash', 'created_by', 'comment', 'created_at',
+        'node_id', 'version_number', 'storage_path', 'size', 'mime_type', 'hash', 'is_encrypted', 'created_by', 'comment', 'created_at',
     ];
 
     protected $hidden = ['storage_path'];
@@ -20,6 +20,7 @@ class FileVersion extends Model
         return [
             'size' => 'integer',
             'version_number' => 'integer',
+            'is_encrypted' => 'boolean',
             'created_at' => 'datetime',
         ];
     }

@@ -9,13 +9,13 @@ use App\Models\Library;
 use App\Models\Node;
 use App\Models\Share;
 use App\Services\ActivityLogger;
+use App\Services\LibraryCrypto;
 use App\Services\NodeService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 class LibraryController extends Controller
 {
-    public function __construct(protected NodeService $nodes, protected ActivityLogger $activity) {}
+    public function __construct(protected NodeService $nodes, protected ActivityLogger $activity, protected LibraryCrypto $crypto) {}
 
     public function index(Request $request)
     {
@@ -73,13 +73,19 @@ class LibraryController extends Controller
             'password' => ['nullable', 'string', 'min:6', 'max:100'],
         ]);
 
-        $library = Library::create([
+        $library = new Library([
             'owner_id' => $request->user()->id,
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
-            'is_encrypted' => ! empty($data['password']),
-            'password_hash' => ! empty($data['password']) ? Hash::make($data['password']) : null,
         ]);
+        if (! empty($data['password'])) {
+            $this->crypto->setupLibrary($library, $data['password']);
+        }
+        $library->save();
+
+        if ($library->is_encrypted) {
+            $this->crypto->unlock($library, $request->user(), $data['password']);
+        }
 
         $this->activity->log('library.create', $request->user(), $library, null, '/');
 
@@ -106,6 +112,99 @@ class LibraryController extends Controller
         $this->activity->log('library.update', $request->user(), $library, null, '/');
 
         return new LibraryResource($library->load('owner'));
+    }
+
+    public function unlock(Request $request, Library $library)
+    {
+        $this->authorize('view', $library);
+        $data = $request->validate(['password' => ['required', 'string']]);
+        $this->crypto->unlock($library, $request->user(), $data['password']);
+        $this->activity->log('library.unlock', $request->user(), $library, null, '/');
+
+        return response()->json(['unlocked' => true, 'expires_in_minutes' => LibraryCrypto::UNLOCK_TTL_MINUTES]);
+    }
+
+    public function lock(Request $request, Library $library)
+    {
+        $this->crypto->lock($library, $request->user());
+
+        return response()->json(['unlocked' => false]);
+    }
+
+    public function changePassword(Request $request, Library $library)
+    {
+        $this->authorize('manage', $library);
+        $data = $request->validate(['current_password' => ['required', 'string'], 'password' => ['required', 'string', 'min:6', 'max:100']]);
+        $this->crypto->changePassword($library, $data['current_password'], $data['password']);
+        $this->crypto->unlock($library, $request->user(), $data['password']);
+
+        return response()->noContent();
+    }
+
+    /** Replace the custom property definitions of the library. */
+    public function updateProperties(Request $request, Library $library)
+    {
+        $this->authorize('manage', $library);
+        $data = $request->validate([
+            'properties' => ['present', 'array', 'max:50'],
+            'properties.*.key' => ['required', 'string', 'max:50', 'regex:/^[a-z0-9_]+$/'],
+            'properties.*.label' => ['required', 'string', 'max:100'],
+            'properties.*.type' => ['required', 'in:text,number,date,select,checkbox,user'],
+            'properties.*.options' => ['nullable', 'array'],
+            'properties.*.options.*' => ['string', 'max:100'],
+        ]);
+        $library->property_definitions = array_values($data['properties']);
+        $library->save();
+
+        return new LibraryResource($library->load('owner'));
+    }
+
+    /** Aggregate statistics for the library (files by type, size, uploads over time). */
+    public function stats(Request $request, Library $library)
+    {
+        $this->authorize('view', $library);
+        $files = Node::where('library_id', $library->id)->files()->get(['mime_type', 'size', 'created_at', 'name']);
+        $byType = $files->groupBy(fn ($f) => self::category($f->mime_type, $f->name))
+            ->map(fn ($g, $k) => ['type' => $k, 'count' => $g->count(), 'size' => (int) $g->sum('size')])
+            ->values();
+        $byMonth = $files->groupBy(fn ($f) => $f->created_at?->format('Y-m'))->map(fn ($g, $k) => ['month' => $k, 'count' => $g->count(), 'size' => (int) $g->sum('size')])->sortKeys()->values();
+        $largest = $files->sortByDesc('size')->take(10)->values()->map(fn ($f) => ['name' => $f->name, 'size' => $f->size]);
+
+        return response()->json([
+            'file_count' => $files->count(),
+            'folder_count' => Node::where('library_id', $library->id)->folders()->count(),
+            'size_bytes' => (int) $files->sum('size'),
+            'trash_count' => Node::onlyTrashed()->where('library_id', $library->id)->whereNotNull('deleted_by')->count(),
+            'by_type' => $byType,
+            'by_month' => $byMonth,
+            'largest' => $largest,
+        ]);
+    }
+
+    public static function category(?string $mime, string $name): string
+    {
+        $mime = (string) $mime;
+        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        if (str_starts_with($mime, 'image/')) {
+            return 'image';
+        }
+        if (str_starts_with($mime, 'video/')) {
+            return 'video';
+        }
+        if (str_starts_with($mime, 'audio/')) {
+            return 'audio';
+        }
+        if ($mime === 'application/pdf' || in_array($ext, ['doc', 'docx', 'odt', 'xls', 'xlsx', 'ppt', 'pptx', 'md', 'txt'])) {
+            return 'document';
+        }
+        if (in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'])) {
+            return 'archive';
+        }
+        if (in_array($ext, ['js', 'ts', 'php', 'py', 'json', 'html', 'css', 'vue', 'sh', 'sql'])) {
+            return 'code';
+        }
+
+        return 'other';
     }
 
     public function destroy(Request $request, Library $library)
