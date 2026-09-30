@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Filament\Resources\Groups\Tables;
+
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+
+class GroupsTable
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('name')->searchable()->sortable(),
+                TextColumn::make('owner.name')->label('Owner')->searchable(),
+                TextColumn::make('members_count')->label('Members')->counts('members'),
+                TextColumn::make('shares_count')->label('Shared libraries')->counts('shares'),
+                TextColumn::make('created_at')->dateTime()->sortable(),
+            ])
+            ->recordActions([
+                EditAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+}
