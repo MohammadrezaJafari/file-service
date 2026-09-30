@@ -18,18 +18,18 @@ class ShareLinksTable
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('token')->copyable()->searchable(),
-                TextColumn::make('kind')->badge(),
-                TextColumn::make('library.name')->label('Library')->searchable(),
-                TextColumn::make('node.name')->label('Item')->placeholder('(whole library)'),
-                TextColumn::make('creator.name')->label('Created by'),
-                IconColumn::make('has_password')->label('Password')->boolean()->state(fn ($record) => $record->hasPassword()),
-                TextColumn::make('expires_at')->dateTime()->placeholder('Never'),
-                TextColumn::make('view_count')->label('Views')->numeric(),
-                TextColumn::make('download_count')->label('Downloads')->numeric(),
+                TextColumn::make('token')->label(__('Token'))->copyable()->searchable(),
+                TextColumn::make('kind')->label(__('Kind'))->badge(),
+                TextColumn::make('library.name')->label(__('Library'))->searchable(),
+                TextColumn::make('node.name')->label(__('Item'))->placeholder(__('(whole library)')),
+                TextColumn::make('creator.name')->label(__('Created by')),
+                IconColumn::make('has_password')->label(__('Password'))->boolean()->state(fn ($record) => $record->hasPassword()),
+                TextColumn::make('expires_at')->label(__('Expires At'))->dateTime()->placeholder(__('Never')),
+                TextColumn::make('view_count')->label(__('Views'))->numeric(),
+                TextColumn::make('download_count')->label(__('Downloads'))->numeric(),
             ])
             ->filters([
-                SelectFilter::make('kind')->options(['download' => 'Download', 'upload' => 'Upload']),
+                SelectFilter::make('kind')->label(__('Kind'))->options(['download' => __('Download'), 'upload' => __('Upload')]),
             ])
             ->recordActions([
                 EditAction::make(),

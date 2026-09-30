@@ -25,6 +25,16 @@ class GroupResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    public static function getModelLabel(): string
+    {
+        return __('Group');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Groups');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return GroupForm::configure($schema);

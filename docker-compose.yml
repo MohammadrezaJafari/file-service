@@ -1,0 +1,59 @@
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: fileservice
+      MYSQL_USER: fileservice
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-psecret"]
+      interval: 5s
+      retries: 20
+
+  api:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8080"
+    environment:
+      APP_NAME: "File Service"
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY:?Run "docker compose run --rm api php artisan key:generate --show" and put it in .env}
+      APP_URL: http://localhost:8000
+      APP_LOCALE: fa
+      FRONTEND_URL: http://localhost:9000
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: fileservice
+      DB_USERNAME: fileservice
+      DB_PASSWORD: secret
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      FILESERVICE_DISK: blobs
+      LOG_CHANNEL: stderr
+    volumes:
+      - blobs:/var/www/html/storage/app/blobs
+      - public-files:/var/www/html/storage/app/public
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        API_URL: http://localhost:8000/api/v1
+    depends_on:
+      - api
+    ports:
+      - "9000:80"
+
+volumes:
+  db-data:
+  blobs:
+  public-files:

@@ -23,7 +23,7 @@ file-service/
 | Groups | Create groups, add members with admin/member roles, share libraries to a group |
 | Starred | Star files/folders for quick access |
 | Activity | Per-library / per-user activity log (create, rename, move, delete, share, download, …) |
-| Languages | Persian (RTL, default) and English UI with a language switcher; Jalali dates in Persian |
+| Languages | Persian (RTL, default) and English UI with a language switcher; Jalali dates in Persian. Admin panel follows `APP_LOCALE` (fa/en) |
 | Admin panel | Filament: users (quota, admin flag, activate/deactivate), libraries (browse files, trash, shares), groups, share links, activity log, global settings, dashboard stats |
 
 ## Requirements
@@ -102,6 +102,20 @@ All endpoints live under `/api/v1` and use Laravel Sanctum bearer tokens.
 | GET/POST | `share/{token}`, `share/{token}/browse`, `share/{token}/download`, `share/{token}/upload` | Anonymous link access |
 | CRUD | `groups`, `groups/{id}/members` | Groups |
 | GET | `starred`, `activities`, `users/search` | Misc |
+
+## Docker
+
+```bash
+cp .env.example .env
+# generate an application key and paste it into .env
+docker compose run --rm --no-deps api php artisan key:generate --show
+docker compose up -d --build
+docker compose exec api php artisan db:seed     # optional demo data
+```
+
+- Web client: http://localhost:9000 · API: http://localhost:8000 · Admin: http://localhost:8000/admin
+- File blobs and the MySQL data live in named volumes (`blobs`, `db-data`).
+- To serve on another host, change `APP_URL`, `FRONTEND_URL` and the `API_URL` build argument in `docker-compose.yml`.
 
 ## Production notes
 

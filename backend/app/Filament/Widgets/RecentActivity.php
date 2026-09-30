@@ -16,15 +16,15 @@ class RecentActivity extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Recent activity')
+            ->heading(__('Recent activity'))
             ->query(Activity::query()->with(['user', 'library'])->latest('id')->limit(15))
             ->paginated(false)
             ->columns([
-                TextColumn::make('created_at')->since(),
-                TextColumn::make('user.name')->placeholder('Anonymous'),
-                TextColumn::make('action')->badge(),
-                TextColumn::make('library.name'),
-                TextColumn::make('path')->limit(60),
+                TextColumn::make('created_at')->label(__('Created At'))->since(),
+                TextColumn::make('user.name')->label(__('User'))->placeholder(__('Anonymous')),
+                TextColumn::make('action')->label(__('Action'))->badge(),
+                TextColumn::make('library.name')->label(__('Library')),
+                TextColumn::make('path')->label(__('Path'))->limit(60),
             ]);
     }
 }

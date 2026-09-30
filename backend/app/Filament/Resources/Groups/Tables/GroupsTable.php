@@ -14,11 +14,11 @@ class GroupsTable
     {
         return $table
             ->columns([
-                TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('owner.name')->label('Owner')->searchable(),
-                TextColumn::make('members_count')->label('Members')->counts('members'),
-                TextColumn::make('shares_count')->label('Shared libraries')->counts('shares'),
-                TextColumn::make('created_at')->dateTime()->sortable(),
+                TextColumn::make('name')->label(__('Name'))->searchable()->sortable(),
+                TextColumn::make('owner.name')->label(__('Owner'))->searchable(),
+                TextColumn::make('members_count')->label(__('Members'))->counts('members'),
+                TextColumn::make('shares_count')->label(__('Shared libraries'))->counts('shares'),
+                TextColumn::make('created_at')->label(__('Created At'))->dateTime()->sortable(),
             ])
             ->recordActions([
                 EditAction::make(),

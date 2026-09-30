@@ -26,6 +26,16 @@ class ShareLinkResource extends Resource
         return false;
     }
 
+    public static function getModelLabel(): string
+    {
+        return __('Share link');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Share links');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ShareLinkForm::configure($schema);

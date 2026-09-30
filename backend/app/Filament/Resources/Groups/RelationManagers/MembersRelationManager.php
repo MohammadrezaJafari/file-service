@@ -17,9 +17,9 @@ class MembersRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                TextColumn::make('name'),
-                TextColumn::make('email'),
-                TextColumn::make('role')->badge(),
+                TextColumn::make('name')->label(__('Name')),
+                TextColumn::make('email')->label(__('Email')),
+                TextColumn::make('role')->label(__('Role'))->badge(),
             ])
             ->headerActions([
                 AttachAction::make()
@@ -27,7 +27,7 @@ class MembersRelationManager extends RelationManager
                     ->recordSelectSearchColumns(['name', 'email'])
                     ->schema(fn (AttachAction $action) => [
                         $action->getRecordSelect(),
-                        Select::make('role')->options(['member' => 'Member', 'admin' => 'Admin'])->default('member')->required(),
+                        Select::make('role')->label(__('Role'))->options(['member' => __('Member'), 'admin' => __('Admin')])->default('member')->required(),
                     ]),
             ])
             ->recordActions([

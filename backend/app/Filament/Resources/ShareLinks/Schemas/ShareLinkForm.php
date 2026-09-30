@@ -12,8 +12,8 @@ class ShareLinkForm
     {
         return $schema
             ->components([
-                DateTimePicker::make('expires_at'),
-                Toggle::make('allow_download'),
+                DateTimePicker::make('expires_at')->label(__('Expires At')),
+                Toggle::make('allow_download')->label(__('Allow Download')),
             ]);
     }
 }

@@ -23,6 +23,16 @@ class Settings extends Page
 
     public ?array $data = [];
 
+    public static function getNavigationLabel(): string
+    {
+        return __('Settings');
+    }
+
+    public function getTitle(): string
+    {
+        return __('Settings');
+    }
+
     public function mount(): void
     {
         $defaults = Setting::defaults();
@@ -40,14 +50,14 @@ class Settings extends Page
         return $schema
             ->statePath('data')
             ->components([
-                Section::make('General')->columns(2)->components([
-                    TextInput::make('site_name')->required()->maxLength(100),
-                    Toggle::make('registration_enabled')->label('Allow self-registration')->inline(false),
-                    Toggle::make('share_links_enabled')->label('Allow public share links')->inline(false),
+                Section::make(__('General'))->columns(2)->components([
+                    TextInput::make('site_name')->label(__('Site Name'))->required()->maxLength(100),
+                    Toggle::make('registration_enabled')->label(__('Allow self-registration'))->inline(false),
+                    Toggle::make('share_links_enabled')->label(__('Allow public share links'))->inline(false),
                 ]),
-                Section::make('Storage')->columns(2)->components([
-                    TextInput::make('default_quota_mb')->label('Default user quota (MB)')->numeric()->minValue(0)->helperText('Blank = unlimited. Per-user quotas override this.'),
-                    TextInput::make('max_upload_mb')->label('Max upload size (MB)')->numeric()->minValue(1)->required(),
+                Section::make(__('Storage'))->columns(2)->components([
+                    TextInput::make('default_quota_mb')->label(__('Default user quota (MB)'))->numeric()->minValue(0)->helperText(__('Blank = unlimited. Per-user quotas override this.')),
+                    TextInput::make('max_upload_mb')->label(__('Max upload size (MB)'))->numeric()->minValue(1)->required(),
                 ]),
             ]);
     }
@@ -62,13 +72,13 @@ class Settings extends Page
         Setting::set('default_quota_bytes', (string) ((int) ($data['default_quota_mb'] ?? 0) * 1048576));
         Setting::set('max_upload_bytes', (string) ((int) $data['max_upload_mb'] * 1048576));
 
-        Notification::make()->title('Settings saved')->success()->send();
+        Notification::make()->title(__('Settings saved'))->success()->send();
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('save')->label('Save')->action('save'),
+            Action::make('save')->label(__('Save'))->action('save'),
         ];
     }
 }

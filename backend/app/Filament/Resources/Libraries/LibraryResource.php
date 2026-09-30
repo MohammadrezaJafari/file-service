@@ -28,6 +28,16 @@ class LibraryResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    public static function getModelLabel(): string
+    {
+        return __('Library');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Libraries');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return LibraryForm::configure($schema);

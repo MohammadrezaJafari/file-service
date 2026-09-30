@@ -31,7 +31,7 @@ class Setting extends Model
     public static function defaults(): array
     {
         return [
-            'site_name' => 'File Service',
+            'site_name' => 'سرویس فایل',
             'registration_enabled' => '1',
             'default_quota_bytes' => '0',
             'max_upload_bytes' => (string) (2 * 1024 * 1024 * 1024),

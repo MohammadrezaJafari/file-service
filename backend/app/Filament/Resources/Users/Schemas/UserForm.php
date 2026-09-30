@@ -13,29 +13,29 @@ class UserForm
     {
         return $schema
             ->components([
-                Section::make('Account')
+                Section::make(__('Account'))
                     ->columns(2)
                     ->components([
-                        TextInput::make('name')->required()->maxLength(255),
-                        TextInput::make('email')->label('Email address')->email()->required()->unique(ignoreRecord: true),
-                        TextInput::make('password')
+                        TextInput::make('name')->label(__('Name'))->required()->maxLength(255),
+                        TextInput::make('email')->label(__('Email address'))->email()->required()->unique(ignoreRecord: true),
+                        TextInput::make('password')->label(__('Password'))
                             ->password()
                             ->revealable()
                             ->required(fn (string $operation) => $operation === 'create')
                             ->dehydrated(fn ($state) => filled($state))
                             ->minLength(8)
-                            ->helperText('Leave blank to keep the current password.'),
+                            ->helperText(__('Leave blank to keep the current password.')),
                     ]),
-                Section::make('Permissions & quota')
+                Section::make(__('Permissions & quota'))
                     ->columns(2)
                     ->components([
-                        Toggle::make('is_admin')->label('Administrator')->helperText('Admins can access this panel and every library.'),
-                        Toggle::make('is_active')->label('Active')->default(true),
+                        Toggle::make('is_admin')->label(__('Administrator'))->helperText(__('Admins can access this panel and every library.')),
+                        Toggle::make('is_active')->label(__('Active'))->default(true),
                         TextInput::make('quota_mb')
-                            ->label('Quota (MB)')
+                            ->label(__('Quota (MB)'))
                             ->numeric()
                             ->minValue(0)
-                            ->helperText('Leave blank to use the default quota from Settings.')
+                            ->helperText(__('Leave blank to use the default quota from Settings.'))
                             ->afterStateHydrated(function (TextInput $component, $record) {
                                 $component->state($record?->quota_bytes !== null ? round($record->quota_bytes / 1048576) : null);
                             })

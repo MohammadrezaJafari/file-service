@@ -14,16 +14,16 @@ class ActivitiesTable
         return $table
             ->defaultSort('id', 'desc')
             ->columns([
-                TextColumn::make('created_at')->dateTime()->sortable(),
-                TextColumn::make('user.name')->label('User')->placeholder('Anonymous')->searchable(),
-                TextColumn::make('action')->badge()->searchable(),
-                TextColumn::make('library.name')->label('Library')->searchable(),
-                TextColumn::make('path')->searchable()->limit(60),
-                TextColumn::make('ip')->label('IP')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_at')->label(__('Created At'))->dateTime()->sortable(),
+                TextColumn::make('user.name')->label(__('User'))->placeholder(__('Anonymous'))->searchable(),
+                TextColumn::make('action')->label(__('Action'))->badge()->searchable(),
+                TextColumn::make('library.name')->label(__('Library'))->searchable(),
+                TextColumn::make('path')->label(__('Path'))->searchable()->limit(60),
+                TextColumn::make('ip')->label(__('IP'))->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('action')->options(fn () => Activity::query()->distinct()->orderBy('action')->pluck('action', 'action')->all()),
-                SelectFilter::make('user')->relationship('user', 'name')->searchable()->preload(),
+                SelectFilter::make('action')->label(__('Action'))->options(fn () => Activity::query()->distinct()->orderBy('action')->pluck('action', 'action')->all()),
+                SelectFilter::make('user')->label(__('User'))->relationship('user', 'name')->searchable()->preload(),
             ]);
     }
 }

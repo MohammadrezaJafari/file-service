@@ -15,13 +15,13 @@ class StatsOverview extends StatsOverviewWidget
     protected function getStats(): array
     {
         return [
-            Stat::make('Users', User::count())
-                ->description(User::where('is_active', true)->count().' active'),
-            Stat::make('Libraries', Library::count()),
-            Stat::make('Files', Node::files()->count())
-                ->description(Format::bytes((int) Library::sum('size_bytes')).' stored'),
-            Stat::make('Share links', ShareLink::count())
-                ->description(ShareLink::sum('download_count').' downloads'),
+            Stat::make(__('Users'), User::count())
+                ->description(User::where('is_active', true)->count().' '.__('active')),
+            Stat::make(__('Libraries'), Library::count()),
+            Stat::make(__('Files'), Node::files()->count())
+                ->description(Format::bytes((int) Library::sum('size_bytes')).' '.__('stored')),
+            Stat::make(__('Share links'), ShareLink::count())
+                ->description(ShareLink::sum('download_count').' '.__('downloads')),
         ];
     }
 }

@@ -13,14 +13,14 @@ class LibraryForm
     {
         return $schema
             ->components([
-                TextInput::make('name')->required()->maxLength(255),
+                TextInput::make('name')->label(__('Name'))->required()->maxLength(255),
                 Select::make('owner_id')
-                    ->label('Owner')
+                    ->label(__('Owner'))
                     ->relationship('owner', 'name')
                     ->searchable(['name', 'email'])
                     ->preload()
                     ->required(),
-                Textarea::make('description')->rows(3)->columnSpanFull(),
+                Textarea::make('description')->label(__('Description'))->rows(3)->columnSpanFull(),
             ]);
     }
 }
